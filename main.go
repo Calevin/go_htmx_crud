@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net/http"
@@ -8,17 +9,25 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	// Se importa los paquetes locales.
+	// Importa el paquete de base de datos
 	"github.com/Calevin/go_htmx_crud/database"
+	// Importa el paquete generado por sqlc
+	"github.com/Calevin/go_htmx_crud/internal/db"
 )
 
 func main() {
+	// Context para las operaciones de base de datos.
+	ctx := context.Background()
+
 	// Se iniciala la base de datos. Esto creará el archivo 'crud.db' en la raíz.
-	db := database.InitDB("./crud.db")
-	defer db.Close()
+	conn := database.InitDB("./crud.db")
+	defer conn.Close()
+
+	// Crea una instancia de `Queries` generada por sqlc.
+	queries := db.New(conn)
 
 	// Se insertan los datos de prueba.
-	insertMockData(db)
+	insertMockData(ctx, queries)
 
 	// Instancia del router Chi
 	r := chi.NewRouter()
@@ -28,10 +37,18 @@ func main() {
 
 	// Ruta GET
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		_, err := w.Write([]byte("hola mundo, la base de datos está lista!"))
+		// Prueba usando funcion creada con sqlc
+		notes, err := queries.ListNotes(r.Context())
 		if err != nil {
-			log.Printf("Error escribiendo la respuesta: %v", err)
+			http.Error(w, "Error al listar notas", http.StatusInternalServerError)
+			return
 		}
+
+		response := "No hay notas."
+		if len(notes) > 0 {
+			response = "Primera nota: " + notes[0].Nombre
+		}
+		_, _ = w.Write([]byte(response))
 	})
 
 	// Se inicia el servidor en el puerto 3000
@@ -43,41 +60,44 @@ func main() {
 }
 
 // insertMockData inserta un tag y una nota de ejemplo, y los vincula.
-func insertMockData(db *sql.DB) {
+func insertMockData(ctx context.Context, queries *db.Queries) {
+	log.Println("Insertando datos de prueba si es necesario...")
+
 	// --- 1. Insertar Tag ---
-	var tagID int64
-	// Primero: se verificamos si el tag ya existe
-	err := db.QueryRow("SELECT id FROM tags WHERE nombre = ?", "Importante").Scan(&tagID)
-	if err == sql.ErrNoRows {
-		// El tag no existe, se inserta
-		res, err := db.Exec("INSERT INTO tags (nombre, color) VALUES (?, ?)", "Importante", "#FF5733")
-		if err != nil {
-			log.Fatalf("Error insertando el tag de prueba: %v", err)
-		}
-		tagID, _ = res.LastInsertId()
-		log.Printf("Tag de prueba 'Importante' insertado con ID: %d\n", tagID)
-	} else {
-		log.Println("El tag de prueba 'Importante' ya existía.")
+	tag, err := queries.CreateTag(ctx, db.CreateTagParams{
+		Nombre: "Importante",
+		Color:  sql.NullString{String: "#FF5733", Valid: true},
+	})
+	if err != nil {
+		// Es probable que el tag ya exista (violación de UNIQUE), así que lo buscamos.
+		tag, _ = queries.GetTag(ctx, 1) // Asumimos ID 1 para el ejemplo
 	}
 
 	// --- 2. Insertar Nota ---
-	var noteID int64
-	err = db.QueryRow("SELECT id FROM notes WHERE nombre = ?", "Mi primera Nota").Scan(&noteID)
-	if err == sql.ErrNoRows {
-		res, err := db.Exec("INSERT INTO notes (nombre, contenido) VALUES (?, ?)", "Mi primera Nota", "Este es el contenido de la nota inicial.")
-		if err != nil {
-			log.Fatalf("Error insertando la nota de prueba: %v", err)
-		}
-		noteID, _ = res.LastInsertId()
-		log.Printf("Nota de prueba 'Mi primera Nota' insertada con ID: %d\n", noteID)
+	var contenido sql.NullString
+	contenido.Scan("Este es el contenido de la nota.")
 
-		// --- 3. Vincular Nota y Tag ---
-		_, err = db.Exec("INSERT OR IGNORE INTO note_tags (note_id, tag_id) VALUES (?, ?)", noteID, tagID)
-		if err != nil {
-			log.Fatalf("Error vinculando nota y tag: %v", err)
+	note, err := queries.CreateNote(ctx, db.CreateNoteParams{
+		Nombre:    "Mi primera Nota con sqlc",
+		Contenido: contenido,
+	})
+	if err != nil {
+		// La nota probablemente ya existe.
+		notes, _ := queries.ListNotes(ctx)
+		if len(notes) > 0 {
+			note = notes[0]
 		}
-		log.Printf("Nota %d vinculada con Tag %d\n", noteID, tagID)
-	} else {
-		log.Println("La nota de prueba 'Mi primera Nota' ya existía.")
+	}
+
+	// --- 3. Vincular Nota y Tag ---
+	if tag.ID != 0 && note.ID != 0 {
+		err = queries.LinkTagToNote(ctx, db.LinkTagToNoteParams{
+			NoteID: note.ID,
+			TagID:  tag.ID,
+		})
+		// Ignoramos el error, ya que el vínculo podría existir.
+		if err == nil {
+			log.Printf("Vínculo creado entre Nota ID %d y Tag ID %d\n", note.ID, tag.ID)
+		}
 	}
 }

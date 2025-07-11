@@ -1,0 +1,18 @@
+# sqlc.yaml
+version: "2"
+sql:
+  - engine: "sqlite"
+    # Directorio con los archivos .sql que definen el esquema
+    schema: "sql/schema"
+    # Directorio con los archivos .sql que contienen las consultas
+    queries: "sql/queries"
+    gen:
+      go:
+        # Paquete Go que se generará
+        package: "db"
+        # Directorio de salida para el código Go
+        out: "internal/db"
+        # Habilita la generación de la interfaz Queries, útil para mocks
+        emit_interface: true
+        # Genera los struct tags para JSON, útil para APIs
+        emit_json_tags: true

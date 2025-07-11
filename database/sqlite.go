@@ -3,12 +3,13 @@ package database
 import (
 	"database/sql"
 	"log"
+	"os"
 
 	// El guion bajo _ importa el driver para que se registre en database/sql
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// InitDB inicializa la conexión a la base de datos SQLite y crea las tablas si no existen.
+// InitDB inicializa la conexión a la base de datos y ejecuta el esquema.
 func InitDB(filepath string) *sql.DB {
 	// Abre la conexión con la base de datos. Si el archivo no existe, lo crea.
 	db, err := sql.Open("sqlite3", filepath)
@@ -23,51 +24,22 @@ func InitDB(filepath string) *sql.DB {
 
 	log.Println("Conexión a la base de datos SQLite exitosa.")
 
-	createTables(db)
+	// Ejecuta el schema.sql para crear las tablas
+	if err = executeSchema(db); err != nil {
+		log.Fatalf("Error aplicando el esquema: %v", err)
+	}
 
 	return db
 }
 
-// createTables ejecuta el SQL para crear las tablas.
-func createTables(db *sql.DB) {
-	// SQL para crear la tabla de tags.
-	// NOTA: "nombre" es UNIQUE para evitar tags duplicados.
-	createTagsTableSQL := `
-	CREATE TABLE IF NOT EXISTS tags (
-		"id"    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-		"nombre" TEXT NOT NULL UNIQUE,
-		"color"  TEXT
-	);`
-
-	// SQL para crear la tabla de notas.
-	createNotesTableSQL := `
-	CREATE TABLE IF NOT EXISTS notes (
-		"id"        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-		"nombre"    TEXT NOT NULL,
-		"contenido" TEXT
-	);`
-
-	// Tabla muchos a muchos entre notas y tags.
-	createNoteTagsTableSQL := `
-	CREATE TABLE IF NOT EXISTS note_tags (
-		"note_id" INTEGER NOT NULL,
-		"tag_id"  INTEGER NOT NULL,
-		PRIMARY KEY(note_id, tag_id),
-		FOREIGN KEY(note_id) REFERENCES notes(id) ON DELETE CASCADE,
-		FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
-	);`
-
-	// Se ejecutan las sentencias SQL.
-	for _, query := range []string{createTagsTableSQL, createNotesTableSQL, createNoteTagsTableSQL} {
-		statement, err := db.Prepare(query)
-		if err != nil {
-			log.Fatalf("Error preparando la query de creación de tabla: %v", err)
-		}
-		_, err = statement.Exec()
-		if err != nil {
-			log.Fatalf("Error ejecutando la query de creación de tabla: %v", err)
-		}
+func executeSchema(db *sql.DB) error {
+	// Lee el archivo de esquema
+	schema, err := os.ReadFile("sql/schema/schema.sql")
+	if err != nil {
+		return err
 	}
 
-	log.Println("Tablas creadas (si no existían) exitosamente.")
+	// Ejecuta el SQL del archivo
+	_, err = db.Exec(string(schema))
+	return err
 }
