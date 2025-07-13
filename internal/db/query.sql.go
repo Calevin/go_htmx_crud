@@ -184,6 +184,63 @@ func (q *Queries) ListNotes(ctx context.Context) ([]Note, error) {
 	return items, nil
 }
 
+const listNotesWithTags = `-- name: ListNotesWithTags :many
+SELECT
+    n.id AS note_id,
+    n.nombre AS note_nombre,
+    n.contenido AS note_contenido,
+    t.id AS tag_id,
+    t.nombre AS tag_nombre,
+    t.color AS tag_color
+FROM
+    notes n
+        LEFT JOIN
+    note_tags nt ON n.id = nt.note_id
+        LEFT JOIN
+    tags t ON nt.tag_id = t.id
+ORDER BY
+    n.id DESC
+`
+
+type ListNotesWithTagsRow struct {
+	NoteID        int64          `json:"note_id"`
+	NoteNombre    string         `json:"note_nombre"`
+	NoteContenido sql.NullString `json:"note_contenido"`
+	TagID         sql.NullInt64  `json:"tag_id"`
+	TagNombre     sql.NullString `json:"tag_nombre"`
+	TagColor      sql.NullString `json:"tag_color"`
+}
+
+func (q *Queries) ListNotesWithTags(ctx context.Context) ([]ListNotesWithTagsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listNotesWithTags)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListNotesWithTagsRow
+	for rows.Next() {
+		var i ListNotesWithTagsRow
+		if err := rows.Scan(
+			&i.NoteID,
+			&i.NoteNombre,
+			&i.NoteContenido,
+			&i.TagID,
+			&i.TagNombre,
+			&i.TagColor,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTags = `-- name: ListTags :many
 SELECT id, nombre, color FROM tags
 ORDER BY nombre

@@ -9,7 +9,7 @@
     {{range .Notes}}
     <div class="note-card">
         <h3>{{.Nombre}}</h3>
-        <p>{{.Contenido.String}}</p>
+        <p>{{.Contenido}}</p>
         <div class="tags">
             {{range .Tags}}
             <span class="tag" style="background-color: {{.Color.String}};">{{.Nombre}}</span>

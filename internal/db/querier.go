@@ -20,6 +20,7 @@ type Querier interface {
 	GetUserByUsername(ctx context.Context, username string) (User, error)
 	LinkTagToNote(ctx context.Context, arg LinkTagToNoteParams) error
 	ListNotes(ctx context.Context) ([]Note, error)
+	ListNotesWithTags(ctx context.Context) ([]ListNotesWithTagsRow, error)
 	ListTags(ctx context.Context) ([]Tag, error)
 	UpdateNote(ctx context.Context, arg UpdateNoteParams) error
 }

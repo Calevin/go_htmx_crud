@@ -52,3 +52,20 @@ RETURNING *;
 -- name: GetUserByUsername :one
 SELECT * FROM users
 WHERE username = ? LIMIT 1;
+
+-- name: ListNotesWithTags :many
+SELECT
+    n.id AS note_id,
+    n.nombre AS note_nombre,
+    n.contenido AS note_contenido,
+    t.id AS tag_id,
+    t.nombre AS tag_nombre,
+    t.color AS tag_color
+FROM
+    notes n
+        LEFT JOIN
+    note_tags nt ON n.id = nt.note_id
+        LEFT JOIN
+    tags t ON nt.tag_id = t.id
+ORDER BY
+    n.id DESC;

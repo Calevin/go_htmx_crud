@@ -22,24 +22,50 @@ func Render(tpl *template.Template, w http.ResponseWriter, contentFile string, d
 // ListNotesHandler muestra la lista de notas del usuario
 func ListNotesHandler(w http.ResponseWriter, r *http.Request, tpl *template.Template, queries *db.Queries) {
 	// Lógica para obtener las notas
-	notesFromDB, err := queries.ListNotes(r.Context())
+	notesWithTagsFromDB, err := queries.ListNotesWithTags(r.Context())
 	if err != nil {
 		http.Error(w, "Error al obtener notas", http.StatusInternalServerError)
 		return
 	}
 	// Estructura para pasar datos enriquecidos al template
 	type NoteWithTags struct {
-		db.Note
-		Tags []db.Tag
+		ID        int64
+		Nombre    string
+		Contenido string
+		Tags      []db.Tag
 	}
-	var notesForTemplate []NoteWithTags
-	// TODO reemplazar con join
-	for _, note := range notesFromDB {
-		tags, _ := queries.GetTagsForNote(r.Context(), note.ID)
-		notesForTemplate = append(notesForTemplate, NoteWithTags{Note: note, Tags: tags})
+
+	// Mapa para no duplicar notas y agrupar sus tags.
+	notesMap := make(map[int64]*NoteWithTags)
+	// Slice para mantener el orden original.
+	var orderedNotes []*NoteWithTags
+
+	for _, noteAndTag := range notesWithTagsFromDB {
+		// Si no existe se agrega al mapa
+		if _, ok := notesMap[noteAndTag.NoteID]; !ok {
+			note := &NoteWithTags{
+				ID:        noteAndTag.NoteID,
+				Nombre:    noteAndTag.NoteNombre,
+				Contenido: noteAndTag.NoteContenido.String,
+				Tags:      []db.Tag{}, // Se inicializa el slice de tags vacío.
+			}
+			// se agrega al mapa y al lista ordenada
+			notesMap[noteAndTag.NoteID] = note
+			orderedNotes = append(orderedNotes, note)
+		}
+
+		// Si este row tiene tag se agrega a la nota correspondiente
+		if noteAndTag.TagID.Valid {
+			tag := db.Tag{
+				ID:     noteAndTag.TagID.Int64,
+				Nombre: noteAndTag.TagNombre.String,
+				Color:  noteAndTag.TagColor, // `sqlc` ya maneja el NullString aca
+			}
+			notesMap[noteAndTag.NoteID].Tags = append(notesMap[noteAndTag.NoteID].Tags, tag)
+		}
 	}
 	// Se renderiza la página de notas, pasando los datos.
 	data := make(map[string]any)
-	data["Notes"] = notesForTemplate
+	data["Notes"] = orderedNotes
 	Render(tpl, w, "notas.html", data)
 }
