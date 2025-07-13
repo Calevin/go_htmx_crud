@@ -21,7 +21,7 @@ func Authenticator(jwtSecret []byte) func(http.Handler) http.Handler {
 			cookie, err := r.Cookie("token")
 			if err != nil {
 				// Si no hay cookie, el usuario no está autenticado
-				http.Redirect(w, r, "/login-page", http.StatusSeeOther) // Redirige a la página de login
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}
 			tokenString := cookie.Value
@@ -34,7 +34,7 @@ func Authenticator(jwtSecret []byte) func(http.Handler) http.Handler {
 
 			if err != nil || !token.Valid {
 				// Token inválido o expirado
-				http.Redirect(w, r, "/login-page", http.StatusSeeOther)
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}
 

@@ -2,21 +2,42 @@ package main
 
 import (
 	"context"
+	"embed"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 
-	// Importa el paquete de base de datos
 	"github.com/Calevin/go_htmx_crud/database"
-	"github.com/Calevin/go_htmx_crud/internal/auth"
 	"github.com/Calevin/go_htmx_crud/internal/db"
+	"github.com/Calevin/go_htmx_crud/internal/handlers"
 	authMiddleware "github.com/Calevin/go_htmx_crud/internal/middleware"
 	"golang.org/x/crypto/bcrypt"
 )
+
+//go:embed templates/*.html
+var templateFS embed.FS
+
+//go:embed static
+var staticFS embed.FS
+var tpl *template.Template
+
+func init() {
+	funcMap := template.FuncMap{
+		"include": func(templateName string, data any) (template.HTML, error) {
+			var buf strings.Builder
+			err := tpl.ExecuteTemplate(&buf, templateName, data)
+			return template.HTML(buf.String()), err
+		},
+	}
+	tpl = template.New("").Funcs(funcMap)
+	tpl = template.Must(tpl.ParseFS(templateFS, "templates/*.html"))
+}
 
 func main() {
 	// Cargar variables de entorno desde el archivo .env
@@ -46,27 +67,37 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	// Servidor de archivos estáticos para el CSS
+	r.Handle("/static/*", http.FileServer(http.FS(staticFS)))
+
 	// --- Rutas Públicas ---
 	// Endpoint que procesa el formulario de login
-	r.Post("/login", auth.LoginHandler(queries, jwtSecret))
-	// Futura ruta para mostrar el formulario de login con HTMX
-	r.Get("/login-page", func(w http.ResponseWriter, r *http.Request) {
-		// Aquí se servira el HTML del formulario de login
-		w.Write([]byte("Esta será la página de login. Envía un POST a /login."))
+	r.Post("/login", handlers.LoginHandler(queries, jwtSecret))
+
+	// Endpoint del formulario de login
+	r.Get("/login", func(w http.ResponseWriter, r *http.Request) {
+		handlers.Render(tpl, w, "login.html", nil)
 	})
 
 	// --- Rutas Protegidas ---
 	// Grupo de rutas que usarán el middleware de autenticación
 	r.Group(func(r chi.Router) {
+		// El middleware de autenticacion se encarga de validar la sesion
 		r.Use(authMiddleware.Authenticator(jwtSecret))
 
 		// Todas las rutas aquí dentro requerirán un JWT válido.
+		// GET /notas renderiza la página de notas.
 		r.Get("/notas", func(w http.ResponseWriter, r *http.Request) {
-			// Se  accede a los claims desde el contexto
-			claims := r.Context().Value(authMiddleware.UserContextKey).(*auth.Claims)
-			response := "Bienvenido, " + claims.Username + "! Aquí estarán tus notas."
-			w.Write([]byte(response))
+			handlers.ListNotesHandler(w, r, tpl, queries)
 		})
+
+		// POST /logout para cerrar sesión
+		r.Post("/logout", handlers.LogoutHandler())
+	})
+
+	// Redirección de la raíz a /notas (el middleware se encargara de dirigr al login si es necesario)
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/notas", http.StatusFound)
 	})
 
 	// Se inicia el servidor en el puerto 3000

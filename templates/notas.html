@@ -1,0 +1,22 @@
+<div class="notes-header">
+    <h1>Mis Notas</h1>
+    <form hx-post="/logout">
+      <button>Cerrar Sesión</button>
+    </form>
+</div>
+
+<div class="notes-list">
+    {{range .Notes}}
+    <div class="note-card">
+        <h3>{{.Nombre}}</h3>
+        <p>{{.Contenido.String}}</p>
+        <div class="tags">
+            {{range .Tags}}
+            <span class="tag" style="background-color: {{.Color.String}};">{{.Nombre}}</span>
+            {{end}}
+        </div>
+    </div>
+    {{else}}
+    <p>No tienes notas todavía.</p>
+    {{end}}
+</div>

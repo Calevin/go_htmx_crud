@@ -1,36 +1,12 @@
-package auth
+package handlers
 
 import (
+	"github.com/Calevin/go_htmx_crud/internal/auth"
+	"github.com/Calevin/go_htmx_crud/internal/db"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"time"
-
-	"github.com/Calevin/go_htmx_crud/internal/db"
-	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
 )
-
-// Se definen los claims para el token.
-// Se incluye RegisteredClaims para tener los campos estándar como `ExpiresAt`.
-type Claims struct {
-	Username string `json:"username"`
-	jwt.RegisteredClaims
-}
-
-// GenerateJWT crea un nuevo token JWT para un usuario.
-func GenerateJWT(username string, secretKey []byte) (string, error) {
-	// Tiempo de expiración del token (ej. 24 horas)
-	expirationTime := time.Now().Add(24 * time.Hour)
-
-	claims := &Claims{
-		Username: username,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(secretKey)
-}
 
 // LoginHandler procesa la petición de login.
 func LoginHandler(queries *db.Queries, jwtSecret []byte) http.HandlerFunc {
@@ -59,7 +35,7 @@ func LoginHandler(queries *db.Queries, jwtSecret []byte) http.HandlerFunc {
 		}
 
 		// 4. Se genera el token JWT
-		tokenString, err := GenerateJWT(user.Username, jwtSecret)
+		tokenString, err := auth.GenerateJWT(user.Username, jwtSecret)
 		if err != nil {
 			http.Error(w, "Error al generar el token", http.StatusInternalServerError)
 			return
@@ -76,8 +52,24 @@ func LoginHandler(queries *db.Queries, jwtSecret []byte) http.HandlerFunc {
 			SameSite: http.SameSiteLaxMode,
 		})
 
-		// Usando HTMX se redirecciona
+		// Se redirige a las notas usando HTMX
 		w.Header().Set("HX-Redirect", "/notas")
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func LogoutHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Se limpia la cookie del token
+		http.SetCookie(w, &http.Cookie{
+			Name:     "token",
+			Value:    "",
+			Expires:  time.Unix(0, 0), // Expira inmediatamente
+			HttpOnly: true,
+			Path:     "/",
+		})
+		// Se redirige al login usando HTMX
+		w.Header().Set("HX-Redirect", "/login")
 		w.WriteHeader(http.StatusOK)
 	}
 }
