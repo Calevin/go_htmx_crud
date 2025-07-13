@@ -2,21 +2,33 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/joho/godotenv"
 
 	// Importa el paquete de base de datos
 	"github.com/Calevin/go_htmx_crud/database"
-	// Importa el paquete generado por sqlc
+	"github.com/Calevin/go_htmx_crud/internal/auth"
 	"github.com/Calevin/go_htmx_crud/internal/db"
+	authMiddleware "github.com/Calevin/go_htmx_crud/internal/middleware"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
-	// Context para las operaciones de base de datos.
+	// Cargar variables de entorno desde el archivo .env
+	if err := godotenv.Load(); err != nil {
+		log.Println("No se encontró el archivo .env, usando variables de entorno del sistema.")
+	}
+
+	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
+	if len(jwtSecret) == 0 {
+		log.Fatal("La variable de entorno JWT_SECRET no está definida.")
+	}
+
 	ctx := context.Background()
 
 	// Se iniciala la base de datos. Esto creará el archivo 'crud.db' en la raíz.
@@ -25,79 +37,64 @@ func main() {
 
 	// Crea una instancia de `Queries` generada por sqlc.
 	queries := db.New(conn)
-
-	// Se insertan los datos de prueba.
-	insertMockData(ctx, queries)
+	// Creamos un usuario de prueba si no existe
+	createTestUser(ctx, queries)
 
 	// Instancia del router Chi
 	r := chi.NewRouter()
-
 	// Middleware que loguea las peticiones en la consola
 	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
-	// Ruta GET
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		// Prueba usando funcion creada con sqlc
-		notes, err := queries.ListNotes(r.Context())
-		if err != nil {
-			http.Error(w, "Error al listar notas", http.StatusInternalServerError)
-			return
-		}
+	// --- Rutas Públicas ---
+	// Endpoint que procesa el formulario de login
+	r.Post("/login", auth.LoginHandler(queries, jwtSecret))
+	// Futura ruta para mostrar el formulario de login con HTMX
+	r.Get("/login-page", func(w http.ResponseWriter, r *http.Request) {
+		// Aquí se servira el HTML del formulario de login
+		w.Write([]byte("Esta será la página de login. Envía un POST a /login."))
+	})
 
-		response := "No hay notas."
-		if len(notes) > 0 {
-			response = "Primera nota: " + notes[0].Nombre
-		}
-		_, _ = w.Write([]byte(response))
+	// --- Rutas Protegidas ---
+	// Grupo de rutas que usarán el middleware de autenticación
+	r.Group(func(r chi.Router) {
+		r.Use(authMiddleware.Authenticator(jwtSecret))
+
+		// Todas las rutas aquí dentro requerirán un JWT válido.
+		r.Get("/notas", func(w http.ResponseWriter, r *http.Request) {
+			// Se  accede a los claims desde el contexto
+			claims := r.Context().Value(authMiddleware.UserContextKey).(*auth.Claims)
+			response := "Bienvenido, " + claims.Username + "! Aquí estarán tus notas."
+			w.Write([]byte(response))
+		})
 	})
 
 	// Se inicia el servidor en el puerto 3000
 	log.Println("Servidor iniciado en http://localhost:3000")
-	err := http.ListenAndServe(":3000", r)
-	if err != nil {
+	if err := http.ListenAndServe(":3000", r); err != nil {
 		log.Fatalf("Error al iniciar el servidor: %v", err)
 	}
 }
 
-// insertMockData inserta un tag y una nota de ejemplo, y los vincula.
-func insertMockData(ctx context.Context, queries *db.Queries) {
-	log.Println("Insertando datos de prueba si es necesario...")
-
-	// --- 1. Insertar Tag ---
-	tag, err := queries.CreateTag(ctx, db.CreateTagParams{
-		Nombre: "Importante",
-		Color:  sql.NullString{String: "#FF5733", Valid: true},
-	})
+// createTestUser crea un usuario para poder probar el login.
+func createTestUser(ctx context.Context, queries *db.Queries) {
+	username := "testuser"
+	_, err := queries.GetUserByUsername(ctx, username)
+	// Si el usuario no existe (ErrNoRows), lo creamos.
 	if err != nil {
-		// Es probable que el tag ya exista (violación de UNIQUE), así que lo buscamos.
-		tag, _ = queries.GetTag(ctx, 1) // Asumimos ID 1 para el ejemplo
-	}
-
-	// --- 2. Insertar Nota ---
-	var contenido sql.NullString
-	contenido.Scan("Este es el contenido de la nota.")
-
-	note, err := queries.CreateNote(ctx, db.CreateNoteParams{
-		Nombre:    "Mi primera Nota con sqlc",
-		Contenido: contenido,
-	})
-	if err != nil {
-		// La nota probablemente ya existe.
-		notes, _ := queries.ListNotes(ctx)
-		if len(notes) > 0 {
-			note = notes[0]
+		password := "password123"
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			log.Fatalf("Error al hashear la contraseña: %v", err)
 		}
-	}
 
-	// --- 3. Vincular Nota y Tag ---
-	if tag.ID != 0 && note.ID != 0 {
-		err = queries.LinkTagToNote(ctx, db.LinkTagToNoteParams{
-			NoteID: note.ID,
-			TagID:  tag.ID,
+		_, err = queries.CreateUser(ctx, db.CreateUserParams{
+			Username:     username,
+			PasswordHash: string(hashedPassword),
 		})
-		// Ignoramos el error, ya que el vínculo podría existir.
-		if err == nil {
-			log.Printf("Vínculo creado entre Nota ID %d y Tag ID %d\n", note.ID, tag.ID)
+		if err != nil {
+			log.Fatalf("Error al crear usuario de prueba: %v", err)
 		}
+		log.Printf("Usuario de prueba '%s' creado con contraseña '%s'", username, password)
 	}
 }

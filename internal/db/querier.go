@@ -12,10 +12,12 @@ type Querier interface {
 	CreateNote(ctx context.Context, arg CreateNoteParams) (Note, error)
 	// sql/queries/query.sql
 	CreateTag(ctx context.Context, arg CreateTagParams) (Tag, error)
+	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteNote(ctx context.Context, id int64) error
 	GetNote(ctx context.Context, id int64) (Note, error)
 	GetTag(ctx context.Context, id int64) (Tag, error)
 	GetTagsForNote(ctx context.Context, noteID int64) ([]Tag, error)
+	GetUserByUsername(ctx context.Context, username string) (User, error)
 	LinkTagToNote(ctx context.Context, arg LinkTagToNoteParams) error
 	ListNotes(ctx context.Context) ([]Note, error)
 	ListTags(ctx context.Context) ([]Tag, error)

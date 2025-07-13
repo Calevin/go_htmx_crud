@@ -43,3 +43,12 @@ VALUES (?, ?);
 SELECT t.* FROM tags t
 JOIN note_tags nt ON t.id = nt.tag_id
 WHERE nt.note_id = ?;
+
+-- name: CreateUser :one
+INSERT INTO users (username, password_hash)
+VALUES (?, ?)
+RETURNING *;
+
+-- name: GetUserByUsername :one
+SELECT * FROM users
+WHERE username = ? LIMIT 1;

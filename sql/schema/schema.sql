@@ -19,3 +19,9 @@ CREATE TABLE IF NOT EXISTS note_tags (
     FOREIGN KEY(note_id) REFERENCES notes(id) ON DELETE CASCADE,
     FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS users (
+    "id"            INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "username"      TEXT NOT NULL UNIQUE,
+    "password_hash" TEXT NOT NULL
+);

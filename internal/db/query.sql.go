@@ -48,6 +48,24 @@ func (q *Queries) CreateTag(ctx context.Context, arg CreateTagParams) (Tag, erro
 	return i, err
 }
 
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (username, password_hash)
+VALUES (?, ?)
+RETURNING id, username, password_hash
+`
+
+type CreateUserParams struct {
+	Username     string `json:"username"`
+	PasswordHash string `json:"password_hash"`
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, createUser, arg.Username, arg.PasswordHash)
+	var i User
+	err := row.Scan(&i.ID, &i.Username, &i.PasswordHash)
+	return i, err
+}
+
 const deleteNote = `-- name: DeleteNote :exec
 DELETE FROM notes
 WHERE id = ?
@@ -109,6 +127,18 @@ func (q *Queries) GetTagsForNote(ctx context.Context, noteID int64) ([]Tag, erro
 		return nil, err
 	}
 	return items, nil
+}
+
+const getUserByUsername = `-- name: GetUserByUsername :one
+SELECT id, username, password_hash FROM users
+WHERE username = ? LIMIT 1
+`
+
+func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByUsername, username)
+	var i User
+	err := row.Scan(&i.ID, &i.Username, &i.PasswordHash)
+	return i, err
 }
 
 const linkTagToNote = `-- name: LinkTagToNote :exec
