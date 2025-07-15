@@ -42,6 +42,10 @@ button:hover { background-color: #0056b3; }
     border-bottom: 2px solid #eee;
     padding-bottom: 10px;
 }
+.header-buttons {
+    display: flex;
+    gap: 10px;
+}
 .note-card {
     border: 1px solid #ddd;
     padding: 15px;

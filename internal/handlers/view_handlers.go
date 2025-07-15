@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"github.com/Calevin/go_htmx_crud/internal/db"
 	"html/template"
 	"log"
@@ -68,4 +69,38 @@ func ListNotesHandler(w http.ResponseWriter, r *http.Request, tpl *template.Temp
 	data := make(map[string]any)
 	data["Notes"] = orderedNotes
 	Render(tpl, w, "notas.html", data)
+}
+
+// CreateNoteFormHandler muestra el formulario para crear una nueva nota.
+func CreateNoteFormHandler(w http.ResponseWriter, r *http.Request, tpl *template.Template) {
+	err := tpl.ExecuteTemplate(w, "crear_nota.html", nil)
+	if err != nil {
+		log.Printf("Error renderizando: %v", err)
+		http.Error(w, "Error del servidor", 500)
+	}
+}
+
+// CreateNoteHandler procesa el formulario para crear una nueva nota.
+func CreateNoteHandler(w http.ResponseWriter, r *http.Request, tpl *template.Template, queries *db.Queries) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Error al parsear el formulario", http.StatusBadRequest)
+		return
+	}
+
+	nombre := r.FormValue("nombre")
+	contenido := r.FormValue("contenido")
+
+	_, err := queries.CreateNote(r.Context(), db.CreateNoteParams{
+		Nombre: nombre,
+		Contenido: sql.NullString{
+			String: contenido,
+			Valid:  true,
+		},
+	})
+	if err != nil {
+		http.Error(w, "Error al crear la nota", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/notas", http.StatusFound)
 }

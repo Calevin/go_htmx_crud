@@ -93,6 +93,16 @@ func main() {
 
 		// POST /logout para cerrar sesión
 		r.Post("/logout", handlers.LogoutHandler())
+
+		// GET /crear_nota para mostrar el formulario
+		r.Get("/crear_nota", func(w http.ResponseWriter, r *http.Request) {
+			handlers.CreateNoteFormHandler(w, r, tpl)
+		})
+
+		// POST /crear_nota para procesar el formulario
+		r.Post("/crear_nota", func(w http.ResponseWriter, r *http.Request) {
+			handlers.CreateNoteHandler(w, r, tpl, queries)
+		})
 	})
 
 	// Redirección de la raíz a /notas (el middleware se encargara de dirigr al login si es necesario)
