@@ -58,14 +58,23 @@ button:hover { background-color: #0056b3; }
 }
 
 .note-card .delete-button {
-    position: absolute;
-    bottom: 15px;
-    right: 15px;
     background-color: #dc3545;
 }
 
 .note-card .delete-button:hover {
     background-color: #c82333;
+}
+
+.note-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.note-card-actions {
+    display: flex;
+    gap: 10px;
 }
 .note-card h3 {
     margin-top: 0;

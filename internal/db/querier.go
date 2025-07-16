@@ -22,6 +22,7 @@ type Querier interface {
 	ListNotes(ctx context.Context) ([]Note, error)
 	ListNotesWithTags(ctx context.Context) ([]ListNotesWithTagsRow, error)
 	ListTags(ctx context.Context) ([]Tag, error)
+	UnlinkTagsFromNote(ctx context.Context, noteID int64) error
 	UpdateNote(ctx context.Context, arg UpdateNoteParams) error
 }
 

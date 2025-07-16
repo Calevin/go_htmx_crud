@@ -1,0 +1,31 @@
+<div id="content">
+  <div class="notes-header">
+    <h1>Editar Nota</h1>
+    <div class="header-buttons">
+      <button hx-get="/notas" hx-target="body" hx-swap="outerHTML">Volver a Notas</button>
+      <form hx-post="/logout" class="logout-form">
+        <button>Cerrar Sesión</button>
+      </form>
+    </div>
+  </div>
+
+  <form hx-post="/editar_nota/{{.Note.ID}}" hx-target="body" hx-swap="outerHTML">
+    <div class="form-group">
+      <label for="nombre">Nombre</label>
+      <input type="text" id="nombre" name="nombre" value="{{.Note.Nombre}}" required>
+    </div>
+    <div class="form-group">
+      <label for="contenido">Contenido</label>
+      <textarea id="contenido" name="contenido" rows="4" required>{{.Note.Contenido.String}}</textarea>
+    </div>
+    <div class="form-group">
+      <label for="tag_id">Tag</label>
+      <select id="tag_id" name="tag_id" required>
+        {{range .Tags}}
+        <option value="{{.ID}}">{{.Nombre}}</option>
+        {{end}}
+      </select>
+    </div>
+    <button type="submit">Guardar Cambios</button>
+  </form>
+</div>

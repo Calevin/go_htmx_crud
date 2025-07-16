@@ -14,12 +14,17 @@
         <div class="note-card">
             <h3>{{.Nombre}}</h3>
             <p>{{.Contenido}}</p>
-            <div class="tags">
-                {{range .Tags}}
-                <span class="tag" style="background-color: {{.Color.String}};">{{.Nombre}}</span>
-                {{end}}
+            <div class="note-card-footer">
+                <div class="tags">
+                    {{range .Tags}}
+                    <span class="tag" style="background-color: {{.Color.String}};">{{.Nombre}}</span>
+                    {{end}}
+                </div>
+                <div class="note-card-actions">
+                    <button class="edit-button" hx-get="/editar_nota/{{.ID}}" hx-target="body" hx-swap="outerHTML">Editar Nota</button>
+                    <button class="delete-button" hx-delete="/borrar_nota/{{.ID}}" hx-confirm="¿Estás seguro de que deseas borrar esta nota?" hx-target="closest .note-card" hx-swap="outerHTML">Borrar Nota</button>
+                </div>
             </div>
-            <button class="delete-button" hx-delete="/borrar_nota/{{.ID}}" hx-confirm="¿Estás seguro de que deseas borrar esta nota?" hx-target="closest .note-card" hx-swap="outerHTML">Borrar Nota</button>
         </div>
         {{else}}
         <p>No tienes notas todavía.</p>

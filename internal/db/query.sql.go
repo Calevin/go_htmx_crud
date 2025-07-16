@@ -269,6 +269,16 @@ func (q *Queries) ListTags(ctx context.Context) ([]Tag, error) {
 	return items, nil
 }
 
+const unlinkTagsFromNote = `-- name: UnlinkTagsFromNote :exec
+DELETE FROM note_tags
+WHERE note_id = ?
+`
+
+func (q *Queries) UnlinkTagsFromNote(ctx context.Context, noteID int64) error {
+	_, err := q.db.ExecContext(ctx, unlinkTagsFromNote, noteID)
+	return err
+}
+
 const updateNote = `-- name: UpdateNote :exec
 UPDATE notes
 SET nombre = ?, contenido = ?

@@ -108,6 +108,16 @@ func main() {
 		r.Delete("/borrar_nota/{id}", func(w http.ResponseWriter, r *http.Request) {
 			handlers.DeleteNoteHandler(w, r, queries)
 		})
+
+		// GET /editar_nota/{id} para mostrar el formulario de edición
+		r.Get("/editar_nota/{id}", func(w http.ResponseWriter, r *http.Request) {
+			handlers.EditNoteFormHandler(w, r, tpl, queries)
+		})
+
+		// POST /editar_nota/{id} para procesar el formulario de edición
+		r.Post("/editar_nota/{id}", func(w http.ResponseWriter, r *http.Request) {
+			handlers.UpdateNoteHandler(w, r, queries)
+		})
 	})
 
 	// Redirección de la raíz a /notas (el middleware se encargara de dirigr al login si es necesario)

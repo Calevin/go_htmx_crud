@@ -35,6 +35,10 @@ WHERE id = ?;
 DELETE FROM notes
 WHERE id = ?;
 
+-- name: UnlinkTagsFromNote :exec
+DELETE FROM note_tags
+WHERE note_id = ?;
+
 -- name: LinkTagToNote :exec
 INSERT INTO note_tags (note_id, tag_id)
 VALUES (?, ?);

@@ -149,3 +149,87 @@ func DeleteNoteHandler(w http.ResponseWriter, r *http.Request, queries *db.Queri
 
 	w.WriteHeader(http.StatusOK)
 }
+
+// EditNoteFormHandler muestra el formulario para editar una nota.
+func EditNoteFormHandler(w http.ResponseWriter, r *http.Request, tpl *template.Template, queries *db.Queries) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, "ID inválido", http.StatusBadRequest)
+		return
+	}
+
+	note, err := queries.GetNote(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Error al obtener la nota", http.StatusInternalServerError)
+		return
+	}
+
+	tags, err := queries.ListTags(r.Context())
+	if err != nil {
+		http.Error(w, "Error al obtener los tags", http.StatusInternalServerError)
+		return
+	}
+
+	data := map[string]interface{}{
+		"Note": note,
+		"Tags": tags,
+	}
+
+	Render(tpl, w, "editar_nota.html", data)
+}
+
+// UpdateNoteHandler procesa el formulario de edición de una nota.
+func UpdateNoteHandler(w http.ResponseWriter, r *http.Request, queries *db.Queries) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, "ID inválido", http.StatusBadRequest)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Error al parsear el formulario", http.StatusBadRequest)
+		return
+	}
+
+	nombre := r.FormValue("nombre")
+	contenido := r.FormValue("contenido")
+	tagIDStr := r.FormValue("tag_id")
+
+	tagID, err := strconv.ParseInt(tagIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "ID de tag inválido", http.StatusBadRequest)
+		return
+	}
+
+	err = queries.UpdateNote(r.Context(), db.UpdateNoteParams{
+		ID:       id,
+		Nombre:   nombre,
+		Contenido: sql.NullString{
+			String: contenido,
+			Valid:  true,
+		},
+	})
+	if err != nil {
+		http.Error(w, "Error al actualizar la nota", http.StatusInternalServerError)
+		return
+	}
+
+	err = queries.UnlinkTagsFromNote(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Error al desvincular los tags", http.StatusInternalServerError)
+		return
+	}
+
+	err = queries.LinkTagToNote(r.Context(), db.LinkTagToNoteParams{
+		NoteID: id,
+		TagID:  tagID,
+	})
+	if err != nil {
+		http.Error(w, "Error al vincular el nuevo tag", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/notas", http.StatusFound)
+}
