@@ -19,6 +19,7 @@
                 <span class="tag" style="background-color: {{.Color.String}};">{{.Nombre}}</span>
                 {{end}}
             </div>
+            <button class="delete-button" hx-delete="/borrar_nota/{{.ID}}" hx-confirm="¿Estás seguro de que deseas borrar esta nota?" hx-target="closest .note-card" hx-swap="outerHTML">Borrar Nota</button>
         </div>
         {{else}}
         <p>No tienes notas todavía.</p>

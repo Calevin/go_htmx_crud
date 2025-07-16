@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"github.com/Calevin/go_htmx_crud/internal/db"
+	"github.com/go-chi/chi/v5"
 	"html/template"
 	"log"
 	"net/http"
@@ -129,4 +130,22 @@ func CreateNoteHandler(w http.ResponseWriter, r *http.Request, queries *db.Queri
 	}
 
 	http.Redirect(w, r, "/notas", http.StatusFound)
+}
+
+// DeleteNoteHandler borra la nota con el id pasado como parametro
+func DeleteNoteHandler(w http.ResponseWriter, r *http.Request, queries *db.Queries) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, "ID inválido", http.StatusBadRequest)
+		return
+	}
+
+	err = queries.DeleteNote(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Error al borrar la nota", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
