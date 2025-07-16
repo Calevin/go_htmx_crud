@@ -18,6 +18,14 @@
       <label for="contenido">Contenido</label>
       <textarea id="contenido" name="contenido" rows="4" required></textarea>
     </div>
+    <div class="form-group">
+      <label for="tag_id">Tag</label>
+      <select id="tag_id" name="tag_id" required>
+        {{range .Tags}}
+        <option value="{{.ID}}">{{.Nombre}}</option>
+        {{end}}
+      </select>
+    </div>
     <button type="submit">Guardar Nota</button>
   </form>
 </div>

@@ -96,12 +96,12 @@ func main() {
 
 		// GET /crear_nota para mostrar el formulario
 		r.Get("/crear_nota", func(w http.ResponseWriter, r *http.Request) {
-			handlers.CreateNoteFormHandler(w, r, tpl)
+			handlers.CreateNoteFormHandler(w, r, tpl, queries)
 		})
 
 		// POST /crear_nota para procesar el formulario
 		r.Post("/crear_nota", func(w http.ResponseWriter, r *http.Request) {
-			handlers.CreateNoteHandler(w, r, tpl, queries)
+			handlers.CreateNoteHandler(w, r, queries)
 		})
 	})
 

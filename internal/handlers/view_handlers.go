@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 // Render rederiza dentro de layout el template contentFile con los datos pasados como parametros
@@ -72,16 +73,23 @@ func ListNotesHandler(w http.ResponseWriter, r *http.Request, tpl *template.Temp
 }
 
 // CreateNoteFormHandler muestra el formulario para crear una nueva nota.
-func CreateNoteFormHandler(w http.ResponseWriter, r *http.Request, tpl *template.Template) {
-	err := tpl.ExecuteTemplate(w, "crear_nota.html", nil)
+func CreateNoteFormHandler(w http.ResponseWriter, r *http.Request, tpl *template.Template, queries *db.Queries) {
+	tags, err := queries.ListTags(r.Context())
 	if err != nil {
-		log.Printf("Error renderizando: %v", err)
+		log.Printf("Error obteniendo tags: %v", err)
 		http.Error(w, "Error del servidor", 500)
+		return
 	}
+
+	data := map[string]interface{}{
+		"Tags": tags,
+	}
+
+	Render(tpl, w, "crear_nota.html", data)
 }
 
 // CreateNoteHandler procesa el formulario para crear una nueva nota.
-func CreateNoteHandler(w http.ResponseWriter, r *http.Request, tpl *template.Template, queries *db.Queries) {
+func CreateNoteHandler(w http.ResponseWriter, r *http.Request, queries *db.Queries) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Error al parsear el formulario", http.StatusBadRequest)
 		return
@@ -89,8 +97,16 @@ func CreateNoteHandler(w http.ResponseWriter, r *http.Request, tpl *template.Tem
 
 	nombre := r.FormValue("nombre")
 	contenido := r.FormValue("contenido")
+	tagIDStr := r.FormValue("tag_id")
 
-	_, err := queries.CreateNote(r.Context(), db.CreateNoteParams{
+	// Convertir tagID a int64
+	tagID, err := strconv.ParseInt(tagIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "ID de tag inválido", http.StatusBadRequest)
+		return
+	}
+
+	note, err := queries.CreateNote(r.Context(), db.CreateNoteParams{
 		Nombre: nombre,
 		Contenido: sql.NullString{
 			String: contenido,
@@ -99,6 +115,16 @@ func CreateNoteHandler(w http.ResponseWriter, r *http.Request, tpl *template.Tem
 	})
 	if err != nil {
 		http.Error(w, "Error al crear la nota", http.StatusInternalServerError)
+		return
+	}
+
+	err = queries.LinkTagToNote(r.Context(), db.LinkTagToNoteParams{
+		NoteID: note.ID,
+		TagID:  tagID,
+	})
+
+	if err != nil {
+		http.Error(w, "Error al vincular el tag a la nota", http.StatusInternalServerError)
 		return
 	}
 
