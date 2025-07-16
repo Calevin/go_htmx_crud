@@ -203,32 +203,48 @@ func UpdateNoteHandler(w http.ResponseWriter, r *http.Request, queries *db.Queri
 		return
 	}
 
-	err = queries.UpdateNote(r.Context(), db.UpdateNoteParams{
-		ID:       id,
-		Nombre:   nombre,
-		Contenido: sql.NullString{
-			String: contenido,
-			Valid:  true,
-		},
-	})
+	noteOriginal, err := queries.GetNote(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Error al actualizar la nota", http.StatusInternalServerError)
+		http.Error(w, "Error al obtener la nota original", http.StatusInternalServerError)
 		return
 	}
 
-	err = queries.UnlinkTagsFromNote(r.Context(), id)
+	if noteOriginal.Nombre != nombre || noteOriginal.Contenido.String != contenido {
+		err = queries.UpdateNote(r.Context(), db.UpdateNoteParams{
+			ID:     id,
+			Nombre: nombre,
+			Contenido: sql.NullString{
+				String: contenido,
+				Valid:  true,
+			},
+		})
+		if err != nil {
+			http.Error(w, "Error al actualizar la nota", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	tags, err := queries.ListTags(r.Context())
 	if err != nil {
-		http.Error(w, "Error al desvincular los tags", http.StatusInternalServerError)
+		http.Error(w, "Error al obtener los tags", http.StatusInternalServerError)
 		return
 	}
 
-	err = queries.LinkTagToNote(r.Context(), db.LinkTagToNoteParams{
-		NoteID: id,
-		TagID:  tagID,
-	})
-	if err != nil {
-		http.Error(w, "Error al vincular el nuevo tag", http.StatusInternalServerError)
-		return
+	if len(tags) > 0 && tags[0].ID != tagID {
+		err = queries.UnlinkTagsFromNote(r.Context(), id)
+		if err != nil {
+			http.Error(w, "Error al desvincular los tags", http.StatusInternalServerError)
+			return
+		}
+
+		err = queries.LinkTagToNote(r.Context(), db.LinkTagToNoteParams{
+			NoteID: id,
+			TagID:  tagID,
+		})
+		if err != nil {
+			http.Error(w, "Error al vincular el nuevo tag", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	http.Redirect(w, r, "/notas", http.StatusFound)
