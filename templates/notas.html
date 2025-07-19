@@ -1,33 +1,39 @@
 <div id="content">
-    <div class="notes-header">
-        <h1>Mis Notas</h1>
-        <div class="header-buttons">
-            <button hx-get="/crear_nota" hx-target="#content" hx-swap="innerHTML">Agregar Nota</button>
-            <form hx-post="/logout" class="logout-form">
-                <button>Cerrar Sesión</button>
-            </form>
-        </div>
-    </div>
-
-    <div class="notes-list">
-        {{range .Notes}}
-        <div class="note-card">
-            <h3>{{.Nombre}}</h3>
-            <p>{{.Contenido}}</p>
-            <div class="note-card-footer">
-                <div class="tags">
-                    {{range .Tags}}
-                    <span class="tag" style="background-color: {{.Color.String}};">{{.Nombre}}</span>
-                    {{end}}
-                </div>
-                <div class="note-card-actions">
-                    <button class="edit-button" hx-get="/editar_nota/{{.ID}}" hx-target="body" hx-swap="outerHTML">Editar Nota</button>
-                    <button class="delete-button" hx-delete="/borrar_nota/{{.ID}}" hx-confirm="¿Estás seguro de que deseas borrar esta nota?" hx-target="closest .note-card" hx-swap="outerHTML">Borrar Nota</button>
-                </div>
+<header>
+    <nav>
+        <ul>
+            <li><h1>Mis Notas</h1></li>
+        </ul>
+        <ul>
+            <li><button hx-get="/crear_nota" hx-target="#content" hx-swap="innerHTML">Agregar Nota</button></li>
+            <li><button hx-post="/logout" class="contrast">Cerrar Sesión</button></li>
+        </ul>
+    </nav>
+</header>
+<small>Aquí puedes ver y gestionar tus notas.</small>
+<main>
+    {{range .Notes}}
+    <article class="note-card">
+        <header>
+            <h4>{{.Nombre}}</h4>
+        </header>
+        <p class="contenido">{{.Contenido}}</p>
+        <footer class="grid">
+            <div class="tags">
+                {{range .Tags}}
+                <mark class="tag" style="background-color: {{.Color.String}};">{{.Nombre}}</mark>
+                {{end}}
             </div>
-        </div>
-        {{else}}
+            <div class="grid">
+                <button hx-get="/editar_nota/{{.ID}}" hx-target="body" hx-swap="outerHTML">Editar</button>
+                <button class="contrast" hx-delete="/borrar_nota/{{.ID}}" hx-confirm="¿Estás seguro de que deseas borrar esta nota?" hx-target="closest article" hx-swap="outerHTML">Borrar</button>
+            </div>
+        </footer>
+    </article>
+    {{else}}
+    <article data-theme="light" class="pico-background-zinc-400">
         <p>No tienes notas todavía.</p>
-        {{end}}
-    </div>
+    </article>
+    {{end}}
+</main>
 </div>

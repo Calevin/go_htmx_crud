@@ -10,6 +10,14 @@ import (
 	"strconv"
 )
 
+// Estructura para pasar datos enriquecidos al template
+type NoteWithTags struct {
+	ID        int64
+	Nombre    string
+	Contenido string
+	Tags      []db.Tag
+}
+
 // Render rederiza dentro de layout el template contentFile con los datos pasados como parametros
 func Render(tpl *template.Template, w http.ResponseWriter, contentFile string, data any) {
 	err := tpl.ExecuteTemplate(w, "layout.html", map[string]any{
@@ -29,13 +37,6 @@ func ListNotesHandler(w http.ResponseWriter, r *http.Request, tpl *template.Temp
 	if err != nil {
 		http.Error(w, "Error al obtener notas", http.StatusInternalServerError)
 		return
-	}
-	// Estructura para pasar datos enriquecidos al template
-	type NoteWithTags struct {
-		ID        int64
-		Nombre    string
-		Contenido string
-		Tags      []db.Tag
 	}
 
 	// Mapa para no duplicar notas y agrupar sus tags.
@@ -165,15 +166,28 @@ func EditNoteFormHandler(w http.ResponseWriter, r *http.Request, tpl *template.T
 		return
 	}
 
-	tags, err := queries.ListTags(r.Context())
+	tags, err := queries.GetTagsForNote(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Error al tag de la nota", http.StatusInternalServerError)
+		return
+	}
+
+	noteWithTags := &NoteWithTags{
+		ID:        note.ID,
+		Nombre:    note.Nombre,
+		Contenido: note.Contenido.String,
+		Tags:      tags,
+	}
+
+	allTags, err := queries.ListTags(r.Context())
 	if err != nil {
 		http.Error(w, "Error al obtener los tags", http.StatusInternalServerError)
 		return
 	}
 
 	data := map[string]interface{}{
-		"Note": note,
-		"Tags": tags,
+		"Note": noteWithTags,
+		"Tags": allTags,
 	}
 
 	Render(tpl, w, "editar_nota.html", data)
