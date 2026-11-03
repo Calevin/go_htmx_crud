@@ -28,11 +28,13 @@
             packages = with pkgs; [
               go
               sqlite
+              sqlc # Generate type-safe code from SQL
+              golangci-lint # Fast linters Runner for Go
             ];
 
             shellHook = ''
               echo "Entorno de desarrollo para seb-harness activado."
-              echo "Herramientas disponibles: go $(go version | awk '{print $3}'), sqlite3."
+              echo "Herramientas disponibles: go $(go version | awk '{print $3}'), sqlite3, sqlc $(sqlc version), golangci-lint."
               echo ""
             '';
           };

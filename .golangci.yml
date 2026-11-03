@@ -1,0 +1,11 @@
+version: "2"
+linters:
+  default: none
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+  settings:
+    errcheck:
+      exclude-functions:
+        - (*database/sql.DB).Close

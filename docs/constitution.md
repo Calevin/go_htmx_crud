@@ -23,8 +23,8 @@
 - **Comandos Oficiales de Verificación Programática:**
   - **Compilación / Build:** `go build ./...`
   - **Tests Unitarios / Integración:** `go test ./...`
-  - **Linter / Análisis Estático:** `go vet ./...`
-  - *Nota de generación:* tras modificar `sql/schema/*.sql` o `sql/queries/*.sql` debe ejecutarse `sqlc generate` (requiere `sqlc` instalado; hoy no está en el flake — ver `MEMORY.md` §3).
+  - **Linter / Análisis Estático:** `golangci-lint run` (incluye `govet`; config en `.golangci.yml`, gate de 0 hallazgos).
+  - **Sincronía sqlc:** tras modificar `sql/schema/*.sql` o `sql/queries/*.sql` debe ejecutarse `sqlc generate` y confirmar `git diff --exit-code internal/db/` (código generado en sync).
 - **Prohibiciones de Stack:**
   - Prohibido añadir nuevas dependencias externas sin aprobación explícita en la spec/plan.
   - Prohibido reemplazar librerías existentes del proyecto por alternativas equivalentes (ej. `gorilla/mux` por Chi, `pgx` por SQLite, `templ` por `html/template`).
