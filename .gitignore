@@ -10,3 +10,4 @@ go_htmx_crud
 .envrc
 .seb/bin/
 .seb/seb-audit.db*
+.seb/ACTIVE_ROLE
