@@ -3,3 +3,8 @@ crud.db
 .idea/
 *.iml
 .env
+go_htmx_crud
+
+# dev-shell
+.direnv/
+.envrc
