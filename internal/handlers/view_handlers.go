@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/Calevin/go_htmx_crud/internal/db"
 	"github.com/go-chi/chi/v5"
 	"html/template"
@@ -142,6 +143,16 @@ func DeleteNoteHandler(w http.ResponseWriter, r *http.Request, queries *db.Queri
 		return
 	}
 
+	_, err = queries.GetNote(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Nota no encontrada", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Error al obtener la nota", http.StatusInternalServerError)
+		return
+	}
+
 	err = queries.DeleteNote(r.Context(), id)
 	if err != nil {
 		http.Error(w, "Error al borrar la nota", http.StatusInternalServerError)
@@ -162,6 +173,10 @@ func EditNoteFormHandler(w http.ResponseWriter, r *http.Request, tpl *template.T
 
 	note, err := queries.GetNote(r.Context(), id)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Nota no encontrada", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Error al obtener la nota", http.StatusInternalServerError)
 		return
 	}
@@ -219,6 +234,10 @@ func UpdateNoteHandler(w http.ResponseWriter, r *http.Request, queries *db.Queri
 
 	noteOriginal, err := queries.GetNote(r.Context(), id)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Nota no encontrada", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Error al obtener la nota original", http.StatusInternalServerError)
 		return
 	}

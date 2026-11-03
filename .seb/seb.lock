@@ -1,3 +1,10 @@
 {
-  "tasks": {}
+  "tasks": {
+    "002_codigos_http_canonicos": {
+      "spec_hash": "0e7ac3c0c60463f5e7777736275a2eee192fb8ac86641c839a1d0d77dda325d6",
+      "verifier_hash": "2c7e8bc115b4772faf45c099de675159c7ec6daad135c6e367d4c8af3ddb6ccc",
+      "verified": true,
+      "commit_hash": "6e21d20"
+    }
+  }
 }
