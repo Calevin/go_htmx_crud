@@ -8,3 +8,5 @@ go_htmx_crud
 # dev-shell
 .direnv/
 .envrc
+.seb/bin/
+.seb/seb-audit.db*
