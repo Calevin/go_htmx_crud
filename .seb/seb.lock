@@ -1,10 +1,16 @@
 {
   "tasks": {
+    "001_tests_codigo_existente": {
+      "spec_hash": "ebdf859df4e58517257367cb40fbabd11068d529e764d97ca56862ab066a8f12",
+      "verifier_hash": "409794f7a38809a0ef6b811a7a7e0a60d495346247a4af8cda99c004fb3ce172",
+      "verified": true,
+      "commit_hash": "711d44f"
+    },
     "002_codigos_http_canonicos": {
       "spec_hash": "0e7ac3c0c60463f5e7777736275a2eee192fb8ac86641c839a1d0d77dda325d6",
       "verifier_hash": "2c7e8bc115b4772faf45c099de675159c7ec6daad135c6e367d4c8af3ddb6ccc",
       "verified": true,
-      "commit_hash": "6e21d20"
+      "commit_hash": "711d44f"
     }
   }
 }

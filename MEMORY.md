@@ -7,9 +7,9 @@
 > - **Invariante del Agente:** Antes de proponer un diseño en `seb-planificador` o escribir código, verifica las secciones 2 y 3 para no reintentar enfoques fallidos.
 
 ## 1. Estado Actual del Proyecto
-- **Fase SDD activa:** Spec `002_codigos_http_canonicos` implementada y verificada (`VERIFIED`). Próximo paso: retomar spec `001_tests_codigo_existente` (desbloqueada).
-- **Última Spec verificada:** `002_codigos_http_canonicos` (11/11 controles en `[PASA]`).
-- **Estado de la suite de verificación:** Verde (100% de controles deterministas aprobados por `.seb/bin/seb verify 002`).
+- **Fase SDD activa:** Spec `001_tests_codigo_existente` implementada y verificada exitosamente (`VERIFIED`). Cobertura >= 70% alcanzada en los cuatro paquetes lógicos.
+- **Última Spec verificada:** `001_tests_codigo_existente` (16/16 controles en `[PASA]`).
+- **Estado de la suite de verificación:** Verde (100% de controles deterministas aprobados por `.seb/bin/seb verify 001`).
 - **Comandos oficiales vigentes:** `go build ./...` / `go test ./...` / `golangci-lint run` / `sqlc generate` + `git diff --exit-code internal/db/`.
 
 ## 2. Callejones sin Salida y Enfoques Descartados (NO REINTENTAR)
@@ -18,7 +18,7 @@
 
 ## 3. Restricciones Técnicas y Trampas Conocidas (Gotchas)
 *Limitaciones del entorno (NixOS, kernel, contenedores, base de datos, versiones del compilador/runtime) o del dominio que no son obvias leyendo el código.*
-- `[2026-11-03] [tests]` No existe ningún `*_test.go` en el repo -> `go test ./...` pasa vacío (no valida nada); la primera spec que toque handlers debe crear la suite base con `httptest` + interfaz `db.Queries` (`emit_interface: true` ya habilitado en `sqlc.yaml`).
+- `[2026-11-03] [tests]` Suite base automatizada completada para los cuatro paquetes lógicos (`internal/auth`, `database`, `internal/middleware`, `internal/handlers`) con cobertura superior al 70% por paquete y fixtures temporales aislados (`t.TempDir()`).
 - `[2026-11-03] [repo]` El binario compilado `go_htmx_crud` (~17 MB) y `crud.db` están rastreados en git pese a estar en `.gitignore` (ignoran solo archivos no rastreados) -> requieren `git rm --cached`; deuda de higiene pendiente.
 - `[2026-11-03] [auth]` `main.go` crea un usuario de prueba (`testuser`/`password123`) al arrancar -> cualquier test de integración que levante `main` real chocará con esa semilla; usar BD temporal y no ejecutar `main()` completo en tests.
 
