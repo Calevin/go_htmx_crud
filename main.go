@@ -12,12 +12,13 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
+	"golang.org/x/oauth2"
 
 	"github.com/Calevin/go_htmx_crud/database"
+	"github.com/Calevin/go_htmx_crud/internal/auth"
 	"github.com/Calevin/go_htmx_crud/internal/db"
 	"github.com/Calevin/go_htmx_crud/internal/handlers"
 	authMiddleware "github.com/Calevin/go_htmx_crud/internal/middleware"
-	"golang.org/x/crypto/bcrypt"
 )
 
 //go:embed templates/*.html
@@ -45,12 +46,47 @@ func main() {
 		log.Println("No se encontró el archivo .env, usando variables de entorno del sistema.")
 	}
 
-	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
-	if len(jwtSecret) == 0 {
-		log.Fatal("La variable de entorno JWT_SECRET no está definida.")
+	idpHodorURL := os.Getenv("IDP_HODOR_URL")
+	if idpHodorURL == "" {
+		idpHodorURL = "http://localhost:8080"
+	}
+
+	oauthClientID := os.Getenv("OAUTH_CLIENT_ID")
+	if oauthClientID == "" {
+		oauthClientID = "go-htmx-crud"
+	}
+
+	oauthClientSecret := os.Getenv("OAUTH_CLIENT_SECRET")
+	if oauthClientSecret == "" {
+		oauthClientSecret = "go-crud-secret"
+	}
+
+	redirectURI := os.Getenv("OAUTH_REDIRECT_URI")
+	if redirectURI == "" {
+		redirectURI = "http://localhost:3000/auth/callback"
 	}
 
 	ctx := context.Background()
+
+	// Inicializar el validador de tokens RS256 contra el JWKS del IdP (fail-fast)
+	jwksURL := strings.TrimRight(idpHodorURL, "/") + "/.well-known/jwks.json"
+	validator, err := auth.NewTokenValidator(ctx, jwksURL, idpHodorURL, oauthClientID)
+	if err != nil {
+		log.Fatalf("Error al inicializar el validador de tokens contra Hodor (%s): %v", jwksURL, err)
+	}
+
+	// Configuracion del cliente OAuth2 con PKCE
+	oauthConfig := &oauth2.Config{
+		ClientID:     oauthClientID,
+		ClientSecret: oauthClientSecret,
+		RedirectURL:  redirectURI,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  strings.TrimRight(idpHodorURL, "/") + "/oauth2/authorize",
+			TokenURL: strings.TrimRight(idpHodorURL, "/") + "/oauth2/token",
+		},
+		Scopes: []string{"openid", "profile"},
+	}
+	authHandler := handlers.NewAuthHandler(oauthConfig, validator)
 
 	// Se iniciala la base de datos. Esto creará el archivo 'crud.db' en la raíz.
 	conn := database.InitDB("./crud.db")
@@ -58,8 +94,6 @@ func main() {
 
 	// Crea una instancia de `Queries` generada por sqlc.
 	queries := db.New(conn)
-	// Creamos un usuario de prueba si no existe
-	createTestUser(ctx, queries)
 
 	// Instancia del router Chi
 	r := chi.NewRouter()
@@ -67,32 +101,31 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	// Servidor de archivos estáticos para el CSS
+	// Servidor de archivos estaticos para CSS y assets
 	r.Handle("/static/*", http.FileServer(http.FS(staticFS)))
 
-	// --- Rutas Públicas ---
-	// Endpoint que procesa el formulario de login
-	r.Post("/login", handlers.LoginHandler(queries, jwtSecret))
+	// --- Rutas Publicas ---
+	// Inicio de sesion federado (redireccion OIDC a Hodor con PKCE)
+	r.Get("/login", authHandler.Login)
+	r.Get("/auth/login", authHandler.Login)
 
-	// Endpoint del formulario de login
-	r.Get("/login", func(w http.ResponseWriter, r *http.Request) {
-		handlers.Render(tpl, w, "login.html", nil)
-	})
+	// Retorno de autorizacion OIDC
+	r.Get("/auth/callback", authHandler.Callback)
+
+	// Cierre de sesion local
+	r.Post("/logout", authHandler.Logout)
+	r.Get("/auth/logout", authHandler.Logout)
 
 	// --- Rutas Protegidas ---
 	// Grupo de rutas que usarán el middleware de autenticación
 	r.Group(func(r chi.Router) {
-		// El middleware de autenticacion se encarga de validar la sesion
-		r.Use(authMiddleware.Authenticator(jwtSecret))
+		// Middleware de autenticacion con validacion RS256 y soporte HTMX
+		r.Use(authMiddleware.Authenticator(validator))
 
-		// Todas las rutas aquí dentro requerirán un JWT válido.
 		// GET /notas renderiza la página de notas.
 		r.Get("/notas", func(w http.ResponseWriter, r *http.Request) {
 			handlers.ListNotesHandler(w, r, tpl, queries)
 		})
-
-		// POST /logout para cerrar sesión
-		r.Post("/logout", handlers.LogoutHandler())
 
 		// GET /crear_nota para mostrar el formulario
 		r.Get("/crear_nota", func(w http.ResponseWriter, r *http.Request) {
@@ -120,7 +153,7 @@ func main() {
 		})
 	})
 
-	// Redirección de la raíz a /notas (el middleware se encargara de dirigr al login si es necesario)
+	// Redireccion raiz a /notas
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/notas", http.StatusFound)
 	})
@@ -129,28 +162,5 @@ func main() {
 	log.Println("Servidor iniciado en http://localhost:3000")
 	if err := http.ListenAndServe(":3000", r); err != nil {
 		log.Fatalf("Error al iniciar el servidor: %v", err)
-	}
-}
-
-// createTestUser crea un usuario para poder probar el login.
-func createTestUser(ctx context.Context, queries *db.Queries) {
-	username := "testuser"
-	_, err := queries.GetUserByUsername(ctx, username)
-	// Si el usuario no existe (ErrNoRows), lo creamos.
-	if err != nil {
-		password := "password123"
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		if err != nil {
-			log.Fatalf("Error al hashear la contraseña: %v", err)
-		}
-
-		_, err = queries.CreateUser(ctx, db.CreateUserParams{
-			Username:     username,
-			PasswordHash: string(hashedPassword),
-		})
-		if err != nil {
-			log.Fatalf("Error al crear usuario de prueba: %v", err)
-		}
-		log.Printf("Usuario de prueba '%s' creado con contraseña '%s'", username, password)
 	}
 }

@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/Calevin/go_htmx_crud/internal/auth"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 // contextKey para pasar datos de forma segura entre middlewares y handlers.
@@ -13,35 +13,43 @@ type contextKey string
 
 const UserContextKey = contextKey("user")
 
-// Authenticator es un middleware de Chi que verifica el token JWT.
-func Authenticator(jwtSecret []byte) func(http.Handler) http.Handler {
+// Authenticator es un middleware de Chi que verifica el access_token mediante TokenValidator.
+func Authenticator(validator *auth.TokenValidator) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// 1. Se obtiene el token de la cookie
+			// 1. Obtener la cookie de sesion 'token'
 			cookie, err := r.Cookie("token")
+			if err != nil || cookie.Value == "" {
+				handleUnauthorized(w, r)
+				return
+			}
+
+			// 2. Validar criptograficamente el token con RS256 contra JWKS
+			claims, err := validator.ValidateToken(cookie.Value)
 			if err != nil {
-				// Si no hay cookie, el usuario no está autenticado
-				http.Redirect(w, r, "/login", http.StatusSeeOther)
-				return
-			}
-			tokenString := cookie.Value
-
-			// 2. Se parsea y valida el token
-			claims := &auth.Claims{}
-			token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-				return jwtSecret, nil
-			})
-
-			if err != nil || !token.Valid {
-				// Token inválido o expirado
-				http.Redirect(w, r, "/login", http.StatusSeeOther)
+				// Si el usuario es valido en Hodor pero no pertenece a authorized_systems -> 403 Forbidden
+				if errors.Is(err, auth.ErrUnauthorizedSystem) {
+					http.Error(w, "Forbidden: User not authorized for this system", http.StatusForbidden)
+					return
+				}
+				// Token caducado, malformado o con firma invalida -> no autenticado
+				handleUnauthorized(w, r)
 				return
 			}
 
-			// 3. Se guarda la información del usuario en el contexto de la petición
-			// para que los siguientes handlers puedan acceder a ella.
+			// 3. Inyectar claims en el contexto para handlers posteriores
 			ctx := context.WithValue(r.Context(), UserContextKey, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+// handleUnauthorized gestiona la respuesta segun si la peticion proviene de HTMX o es ordinaria.
+func handleUnauthorized(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("HX-Request") == "true" {
+		w.Header().Set("HX-Redirect", "/auth/login")
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 }

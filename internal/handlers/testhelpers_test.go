@@ -2,12 +2,19 @@ package handlers
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"database/sql"
+	"encoding/base64"
+	"encoding/json"
 	"html/template"
+	"math/big"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -20,8 +27,53 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// defaultTestSecret es la clave secreta utilizada para emitir y validar JWT en los tests.
+// defaultTestSecret se conserva por compatibilidad de tipos con helpers historicos.
 var defaultTestSecret = []byte("test-jwt-secret-key-for-unit-testing")
+
+var (
+	testIdPMutex    sync.Mutex
+	testIdPServer   *httptest.Server
+	testIdPPrivKey  *rsa.PrivateKey
+	testIdPKeyID    = "test-handlers-key-1"
+	testIdPIssuer   string
+	testValidator   *auth.TokenValidator
+	testIdPInitOnce sync.Once
+)
+
+func ensureTestIdP() {
+	testIdPInitOnce.Do(func() {
+		var err error
+		testIdPPrivKey, err = rsa.GenerateKey(rand.Reader, 2048)
+		if err != nil {
+			panic("failed to generate rsa key for handlers test: " + err.Error())
+		}
+
+		mux := http.NewServeMux()
+		mux.HandleFunc("/.well-known/jwks.json", func(w http.ResponseWriter, r *http.Request) {
+			pub := &testIdPPrivKey.PublicKey
+			nBytes := pub.N.Bytes()
+			eBytes := big.NewInt(int64(pub.E)).Bytes()
+			jwk := map[string]any{
+				"kty": "RSA",
+				"kid": testIdPKeyID,
+				"use": "sig",
+				"alg": "RS256",
+				"n":   base64.RawURLEncoding.EncodeToString(nBytes),
+				"e":   base64.RawURLEncoding.EncodeToString(eBytes),
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{"keys": []any{jwk}})
+		})
+
+		testIdPServer = httptest.NewServer(mux)
+		testIdPIssuer = testIdPServer.URL
+
+		testValidator, err = auth.NewTokenValidator(context.Background(), testIdPServer.URL+"/.well-known/jwks.json", testIdPIssuer, "go-htmx-crud")
+		if err != nil {
+			panic("failed to initialize testValidator: " + err.Error())
+		}
+	})
+}
 
 // newTestDB inicializa una base de datos SQLite aislada en un directorio temporal y aplica el esquema.
 func newTestDB(t *testing.T) (*sql.DB, *db.Queries) {
@@ -75,18 +127,18 @@ func newTestTpl(t *testing.T) *template.Template {
 }
 
 // newTestRouter construye un router Chi que refleja las rutas definidas en main.go.
-func newTestRouter(queries *db.Queries, tpl *template.Template, jwtSecret []byte) *chi.Mux {
+func newTestRouter(queries *db.Queries, tpl *template.Template, _ []byte) *chi.Mux {
+	ensureTestIdP()
 	r := chi.NewRouter()
 
 	// Rutas publicas
-	r.Post("/login", LoginHandler(queries, jwtSecret))
 	r.Get("/login", func(w http.ResponseWriter, r *http.Request) {
 		Render(tpl, w, "login.html", nil)
 	})
 
 	// Rutas protegidas bajo el middleware de autenticacion
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.Authenticator(jwtSecret))
+		r.Use(middleware.Authenticator(testValidator))
 
 		r.Get("/notas", func(w http.ResponseWriter, r *http.Request) {
 			ListNotesHandler(w, r, tpl, queries)
@@ -182,13 +234,31 @@ func createTestNote(t *testing.T, ctx context.Context, queries *db.Queries, titl
 	return note
 }
 
-// withValidAuthCookie adjunta la cookie 'token' con un JWT valido a la solicitud HTTP.
-func withValidAuthCookie(t *testing.T, req *http.Request, username string, secret []byte) {
+// withValidAuthCookie adjunta la cookie 'token' con un JWT RS256 valido para el cliente go-htmx-crud.
+func withValidAuthCookie(t *testing.T, req *http.Request, username string, _ []byte) {
 	t.Helper()
+	ensureTestIdP()
 
-	tokenString, err := auth.GenerateJWT(username, secret)
+	testIdPMutex.Lock()
+	defer testIdPMutex.Unlock()
+
+	claims := auth.HodorClaims{
+		Username:          username,
+		AuthorizedSystems: []string{"go-htmx-crud"},
+		Roles:             []string{"ROLE_USER"},
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    testIdPIssuer,
+			Subject:   username,
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	token.Header["kid"] = testIdPKeyID
+	tokenString, err := token.SignedString(testIdPPrivKey)
 	if err != nil {
-		t.Fatalf("error generando JWT de prueba: %v", err)
+		t.Fatalf("error generando JWT RS256 de prueba: %v", err)
 	}
 
 	req.AddCookie(&http.Cookie{
@@ -199,19 +269,27 @@ func withValidAuthCookie(t *testing.T, req *http.Request, username string, secre
 	})
 }
 
-// newExpiredToken genera un JWT expirado firmado con la clave provista.
-func newExpiredToken(t *testing.T, username string, secret []byte) string {
+// newExpiredToken genera un JWT expirado.
+func newExpiredToken(t *testing.T, username string, _ []byte) string {
 	t.Helper()
+	ensureTestIdP()
 
-	claims := &auth.Claims{
-		Username: username,
+	testIdPMutex.Lock()
+	defer testIdPMutex.Unlock()
+
+	claims := auth.HodorClaims{
+		Username:          username,
+		AuthorizedSystems: []string{"go-htmx-crud"},
 		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    testIdPIssuer,
+			Subject:   username,
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(-1 * time.Hour)),
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(secret)
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	token.Header["kid"] = testIdPKeyID
+	tokenString, err := token.SignedString(testIdPPrivKey)
 	if err != nil {
 		t.Fatalf("error firmando token expirado de prueba: %v", err)
 	}
