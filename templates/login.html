@@ -1,20 +1,16 @@
 <header>
-  <h1>Iniciar Sesión</h1>
-  <small>Accede a tu cuenta para gestionar tus notas</small>
+  <h1>Bienvenido a App Go HTMX</h1>
+  <small>Gestiona tus notas de forma sencilla y eficiente</small>
 </header>
 <main>
-  <form hx-post="/login" hx-target="body" hx-swap="outerHTML">
-    <fieldset>
-      <label>
-        Usuario
-        <input type="text" id="username" name="username" placeholder="Usuario" value="testuser" required>
-      </label>
-      <label>
-        Contraseña
-        <input type="password" id="password" name="password" placeholder="Contraseña" value="password123" required>
-      </label>
-    </fieldset>
-    <button type="submit">Entrar</button>
-  </form>
+  <article>
+    <header>
+      <h3>Autenticación Centralizada</h3>
+    </header>
+    <p>Para acceder a tus notas personales, inicia sesión a través de nuestra plataforma de identidad.</p>
+    <footer>
+      <a href="/auth/login" role="button">Iniciar sesión con Hodor</a>
+    </footer>
+  </article>
 </main>
 <footer>Calevin Inc.</footer>

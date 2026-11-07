@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"html/template"
 	"net/http"
 	"time"
 
@@ -10,18 +11,54 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// AuthHandler gestiona el flujo de autenticacion federada OpenID Connect / OAuth2 con PKCE.
+// AuthHandler gestiona el flujo de autenticacion federada OpenID Connect / OAuth2 con PKCE y la landing.
 type AuthHandler struct {
 	oauthConfig    *oauth2.Config
 	tokenValidator *auth.TokenValidator
+	tpl            *template.Template
 }
 
 // NewAuthHandler construye una nueva instancia de AuthHandler.
-func NewAuthHandler(oauthConfig *oauth2.Config, validator *auth.TokenValidator) *AuthHandler {
+func NewAuthHandler(oauthConfig *oauth2.Config, validator *auth.TokenValidator, tpl *template.Template) *AuthHandler {
 	return &AuthHandler{
 		oauthConfig:    oauthConfig,
 		tokenValidator: validator,
+		tpl:            tpl,
 	}
+}
+
+// Landing atiende GET /login: renderiza la vista de bienvenida o redirige a /notas si ya existe sesion activa.
+func (h *AuthHandler) Landing(w http.ResponseWriter, r *http.Request) {
+	if cookie, err := r.Cookie("token"); err == nil && cookie.Value != "" {
+		if _, err := h.tokenValidator.ValidateToken(cookie.Value); err == nil {
+			http.Redirect(w, r, "/notas", http.StatusSeeOther)
+			return
+		}
+		// Si la cookie contiene un token invalido o expirado, se limpia en la respuesta
+		http.SetCookie(w, &http.Cookie{
+			Name:     "token",
+			Value:    "",
+			Expires:  time.Unix(0, 0),
+			MaxAge:   -1,
+			HttpOnly: true,
+			Path:     "/",
+			SameSite: http.SameSiteLaxMode,
+		})
+	}
+
+	w.WriteHeader(http.StatusOK)
+	Render(h.tpl, w, "login.html", nil)
+}
+
+// Root atiende GET /: redirige a /notas si el usuario esta autenticado, o a /login si es anonimo.
+func (h *AuthHandler) Root(w http.ResponseWriter, r *http.Request) {
+	if cookie, err := r.Cookie("token"); err == nil && cookie.Value != "" {
+		if _, err := h.tokenValidator.ValidateToken(cookie.Value); err == nil {
+			http.Redirect(w, r, "/notas", http.StatusSeeOther)
+			return
+		}
+	}
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
 // Login inicia el flujo Authorization Code con PKCE.
@@ -144,9 +181,16 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	LogoutHandler()(w, r)
 }
 
-// LogoutHandler retorna el HandlerFunc para cerrar la sesion local.
+// LogoutHandler retorna el HandlerFunc para cerrar la sesion local con semantica POST estricta.
 func LogoutHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Rechazar metodos distintos de POST con 405 Method Not Allowed
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Eliminar la cookie de sesion estableciendo MaxAge -1 y expiracion preterita
 		http.SetCookie(w, &http.Cookie{
 			Name:     "token",
 			Value:    "",
@@ -154,15 +198,18 @@ func LogoutHandler() http.HandlerFunc {
 			MaxAge:   -1,
 			HttpOnly: true,
 			Path:     "/",
+			SameSite: http.SameSiteLaxMode,
 		})
 
+		// Si proviene de HTMX, emitir cabecera HX-Redirect con estado 200 OK
 		if r.Header.Get("HX-Request") == "true" {
 			w.Header().Set("HX-Redirect", "/login")
 			w.WriteHeader(http.StatusOK)
 			return
 		}
 
-		http.Redirect(w, r, "/login", http.StatusFound)
+		// Peticion ordinaria POST: redirigir 303 See Other hacia /login
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	}
 }
 

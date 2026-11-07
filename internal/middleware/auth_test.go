@@ -98,7 +98,7 @@ func setupTestValidator(t *testing.T, clientID string) (*auth.TokenValidator, *m
 	return validator, idp
 }
 
-// TestAuthMiddleware_HTMXRequest_Returns401WithHXRedirect verifica respuesta ante peticion HTMX sin sesion (RF-02).
+// TestAuthMiddleware_HTMXRequest_Returns401WithHXRedirect verifica respuesta ante peticion HTMX sin sesion.
 func TestAuthMiddleware_HTMXRequest_Returns401WithHXRedirect(t *testing.T) {
 	validator, _ := setupTestValidator(t, "go-htmx-crud")
 	spy, called := newProtectedSpyHandler()
@@ -114,8 +114,9 @@ func TestAuthMiddleware_HTMXRequest_Returns401WithHXRedirect(t *testing.T) {
 		t.Fatalf("se esperaba codigo %d pero se obtuvo %d", http.StatusUnauthorized, recorder.Code)
 	}
 
-	if redirect := recorder.Header().Get("HX-Redirect"); redirect != "/auth/login" {
-		t.Fatalf("se esperaba cabecera HX-Redirect: /auth/login pero se obtuvo %s", redirect)
+	redirect := recorder.Header().Get("HX-Redirect")
+	if redirect != "/login" && redirect != "/auth/login" {
+		t.Fatalf("se esperaba cabecera HX-Redirect hacia login pero se obtuvo %s", redirect)
 	}
 
 	if *called {
@@ -123,7 +124,7 @@ func TestAuthMiddleware_HTMXRequest_Returns401WithHXRedirect(t *testing.T) {
 	}
 }
 
-// TestAuthMiddleware_StandardRequest_Returns303ToLogin verifica respuesta ante navegacion ordinaria sin sesion (RF-03).
+// TestAuthMiddleware_StandardRequest_Returns303ToLogin verifica respuesta ante navegacion ordinaria sin sesion.
 func TestAuthMiddleware_StandardRequest_Returns303ToLogin(t *testing.T) {
 	validator, _ := setupTestValidator(t, "go-htmx-crud")
 	spy, called := newProtectedSpyHandler()
@@ -138,8 +139,58 @@ func TestAuthMiddleware_StandardRequest_Returns303ToLogin(t *testing.T) {
 		t.Fatalf("se esperaba codigo %d pero se obtuvo %d", http.StatusSeeOther, recorder.Code)
 	}
 
-	if location := recorder.Header().Get("Location"); location != "/auth/login" {
-		t.Fatalf("se esperaba Location /auth/login pero se obtuvo %s", location)
+	location := recorder.Header().Get("Location")
+	if location != "/login" && location != "/auth/login" {
+		t.Fatalf("se esperaba Location hacia login pero se obtuvo %s", location)
+	}
+
+	if *called {
+		t.Fatal("el handler protegido no debio haberse ejecutado sin sesion")
+	}
+}
+
+// TestAuthMiddleware_StandardRequest_RedirectsToLogin verifica redireccion 303 hacia /login para spec 004 (RF-09).
+func TestAuthMiddleware_StandardRequest_RedirectsToLogin(t *testing.T) {
+	validator, _ := setupTestValidator(t, "go-htmx-crud")
+	spy, called := newProtectedSpyHandler()
+	handler := Authenticator(validator)(spy)
+
+	req := httptest.NewRequest(http.MethodGet, "/notas", nil)
+	recorder := httptest.NewRecorder()
+
+	handler.ServeHTTP(recorder, req)
+
+	if recorder.Code != http.StatusSeeOther {
+		t.Fatalf("se esperaba codigo %d pero se obtuvo %d", http.StatusSeeOther, recorder.Code)
+	}
+
+	if location := recorder.Header().Get("Location"); location != "/login" {
+		t.Fatalf("se esperaba Location /login pero se obtuvo %s", location)
+	}
+
+	if *called {
+		t.Fatal("el handler protegido no debio haberse ejecutado sin sesion")
+	}
+}
+
+// TestAuthMiddleware_HTMXRequest_Returns401WithHXRedirectToLogin verifica respuesta HTMX con HX-Redirect a /login (RF-10).
+func TestAuthMiddleware_HTMXRequest_Returns401WithHXRedirectToLogin(t *testing.T) {
+	validator, _ := setupTestValidator(t, "go-htmx-crud")
+	spy, called := newProtectedSpyHandler()
+	handler := Authenticator(validator)(spy)
+
+	req := httptest.NewRequest(http.MethodGet, "/notas", nil)
+	req.Header.Set("HX-Request", "true")
+	recorder := httptest.NewRecorder()
+
+	handler.ServeHTTP(recorder, req)
+
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf("se esperaba codigo %d pero se obtuvo %d", http.StatusUnauthorized, recorder.Code)
+	}
+
+	if redirect := recorder.Header().Get("HX-Redirect"); redirect != "/login" {
+		t.Fatalf("se esperaba cabecera HX-Redirect: /login pero se obtuvo %s", redirect)
 	}
 
 	if *called {

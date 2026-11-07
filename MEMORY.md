@@ -9,9 +9,9 @@
 
 ## 1. Estado Actual del Proyecto
 
-- **Fase SDD activa:** Spec `003_autenticacion_hodor` implementada y verificada exitosamente (`VERIFIED`). Autenticación federada OIDC con PKCE y validación asimétrica RS256 operativas.
-- **Última Spec verificada:** `003_autenticacion_hodor` (16/16 controles en `[PASA]`).
-- **Estado de la suite de verificación:** Verde (100% de controles deterministas aprobados por `.seb/bin/seb verify autenticacion_hodor`).
+- **Fase SDD activa:** Spec `004_landing_login_logout` implementada y verificada exitosamente (`VERIFIED`). Pantalla de bienvenida desacoplada y logout local seguro.
+- **Última Spec verificada:** `004_landing_login_logout` (12/12 controles en `[PASA]`).
+- **Estado de la suite de verificación:** Verde (100% de controles deterministas aprobados por `.seb/bin/seb verify landing_login_logout`).
 - **Comandos oficiales vigentes:** `go build ./...` / `go test ./...` / `golangci-lint run` / `sqlc generate` + `git diff --exit-code internal/db/`.
 
 ## 2. Callejones sin Salida y Enfoques Descartados (NO REINTENTAR)
@@ -44,3 +44,4 @@ _Riesgos arquitectónicos o casos borde postergados conscientemente para futuras
 - **[2026-11-03] [Deuda Tecnica / Scope Fork]** Spec 002: validacion de campos vacios (nombre de nota en alta/edicion) y manejo de tag_id numerico inexistente postergados fuera de alcance (Opciones B y D); requieren specs futuras de validacion e integridad de datos. Login con credenciales vacias resuelto en RF-07 con 401.
 - **[2026-11-03] [Decision Tecnica]** [D-01] Spec 002: pruebas usan *db.Queries concreto sobre SQLite temporal (t.TempDir) en vez de refactorizar handlers a interfaz db.Querier -> refactor queda para spec 001 segun su Contrato de Desbloqueo. Router de prueba espejo de main.go y templates parseados desde disco con funcMap include replicado, sin tocar produccion.
 - **[2026-11-04] [Spec 003 / Decision Tecnica]** [D-02] OIDC con PKCE + validación asimétrica RS256 mediante keyfunc/v3 contra endpoint JWKS de Hodor. Código 403 Forbidden cuando el token no contiene go-htmx-crud en authorized_systems. Logout estrictamente local (invalidación de cookie) sin Single Sign-Out distribuido. Servidor httptest.Server efímero con claves RSA de 2048 bits para tests deterministas.
+- **[2026-11-07] [Spec 004 / Decision Tecnica]** [D-03] Desacople de landing `/login` del inicio federado OIDC `/auth/login`. Detención de bucle de redirección en logout aterrizando en landing con botón explícito a Hodor. Restricción estricta de `/logout` a método POST con `405 Method Not Allowed` en peticiones GET y soporte `HX-Redirect: /login` con código `200 OK` para HTMX.

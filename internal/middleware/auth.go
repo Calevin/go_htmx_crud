@@ -47,9 +47,9 @@ func Authenticator(validator *auth.TokenValidator) func(http.Handler) http.Handl
 // handleUnauthorized gestiona la respuesta segun si la peticion proviene de HTMX o es ordinaria.
 func handleUnauthorized(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("HX-Request") == "true" {
-		w.Header().Set("HX-Redirect", "/auth/login")
+		w.Header().Set("HX-Redirect", "/login")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }

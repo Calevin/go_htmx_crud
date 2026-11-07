@@ -86,7 +86,7 @@ func main() {
 		},
 		Scopes: []string{"openid", "profile"},
 	}
-	authHandler := handlers.NewAuthHandler(oauthConfig, validator)
+	authHandler := handlers.NewAuthHandler(oauthConfig, validator, tpl)
 
 	// Se iniciala la base de datos. Esto creará el archivo 'crud.db' en la raíz.
 	conn := database.InitDB("./crud.db")
@@ -105,15 +105,19 @@ func main() {
 	r.Handle("/static/*", http.FileServer(http.FS(staticFS)))
 
 	// --- Rutas Publicas ---
+	// Pantalla de bienvenida / Landing
+	r.Get("/login", authHandler.Landing)
+
 	// Inicio de sesion federado (redireccion OIDC a Hodor con PKCE)
-	r.Get("/login", authHandler.Login)
 	r.Get("/auth/login", authHandler.Login)
 
 	// Retorno de autorizacion OIDC
 	r.Get("/auth/callback", authHandler.Callback)
 
-	// Cierre de sesion local
+	// Cierre de sesion local (metodo POST obligatorio; metodos no permitidos devuelven 405)
 	r.Post("/logout", authHandler.Logout)
+	r.Post("/auth/logout", authHandler.Logout)
+	r.Get("/logout", authHandler.Logout)
 	r.Get("/auth/logout", authHandler.Logout)
 
 	// --- Rutas Protegidas ---
@@ -153,10 +157,8 @@ func main() {
 		})
 	})
 
-	// Redireccion raiz a /notas
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/notas", http.StatusFound)
-	})
+	// Enrutamiento raiz inteligente segun estado de sesion
+	r.Get("/", authHandler.Root)
 
 	// Se inicia el servidor en el puerto 3000
 	log.Println("Servidor iniciado en http://localhost:3000")

@@ -17,6 +17,12 @@
       "verifier_hash": "6acd36ab0383cfa56f46f3f527d23aaef8510d6c3a46a3b123b08bd770ee1bc7",
       "verified": true,
       "commit_hash": "b262575"
+    },
+    "004_landing_login_logout": {
+      "spec_hash": "e0e8662b13bb690518032a8a4d4ecdbf76e6944d6ddff783551741913fd66361",
+      "verifier_hash": "5538869d2c9324498f3f857ecc0881f5efc71b7200b80f883d2b9a0e33427960",
+      "verified": true,
+      "commit_hash": "d4cc739"
     }
   }
 }

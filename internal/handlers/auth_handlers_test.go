@@ -88,6 +88,13 @@ func newHandlersMockIdP(t *testing.T, keyID, clientID string) *handlersMockIdP {
 	return mock
 }
 
+func (m *handlersMockIdP) generateToken(claims auth.HodorClaims) string {
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	token.Header["kid"] = m.keyID
+	signedStr, _ := token.SignedString(m.privateKey)
+	return signedStr
+}
+
 func setupTestAuthHandler(t *testing.T, clientID string) (*AuthHandler, *handlersMockIdP) {
 	t.Helper()
 	idp := newHandlersMockIdP(t, "handler-key-1", clientID)
@@ -108,7 +115,8 @@ func setupTestAuthHandler(t *testing.T, clientID string) (*AuthHandler, *handler
 		t.Fatalf("error initializing validator: %v", err)
 	}
 
-	handler := NewAuthHandler(oauthConfig, validator)
+	tpl := newTestTpl(t)
+	handler := NewAuthHandler(oauthConfig, validator, tpl)
 	return handler, idp
 }
 
@@ -281,7 +289,7 @@ func TestAuthCallback_Success_SetsTokenCookieAndRedirectsToNotas(t *testing.T) {
 	}
 }
 
-// TestAuthLogout_ClearsCookieAndRedirects verifica que logout invalide la cookie y redirija a /login (RF-10).
+// TestAuthLogout_ClearsCookieAndRedirects verifica que logout invalide la cookie y redirija a /login.
 func TestAuthLogout_ClearsCookieAndRedirects(t *testing.T) {
 	handler, _ := setupTestAuthHandler(t, "go-htmx-crud")
 
@@ -291,8 +299,8 @@ func TestAuthLogout_ClearsCookieAndRedirects(t *testing.T) {
 	rec := httptest.NewRecorder()
 	handler.Logout(rec, req)
 
-	if rec.Code != http.StatusFound {
-		t.Fatalf("se esperaba 302 Found pero se obtuvo %d", rec.Code)
+	if rec.Code != http.StatusSeeOther && rec.Code != http.StatusFound {
+		t.Fatalf("se esperaba 303 o 302 pero se obtuvo %d", rec.Code)
 	}
 	if rec.Header().Get("Location") != "/login" {
 		t.Fatalf("se esperaba redireccion a /login pero se obtuvo %s", rec.Header().Get("Location"))
@@ -321,6 +329,96 @@ func TestAuthLogout_ClearsCookieAndRedirects(t *testing.T) {
 	}
 	if recHTMX.Header().Get("HX-Redirect") != "/login" {
 		t.Fatalf("peticion HTMX esperaba cabecera HX-Redirect: /login pero obtuvo %s", recHTMX.Header().Get("HX-Redirect"))
+	}
+}
+
+// TestAuthLogout_HTMX_Returns200WithHXRedirect verifica respuesta 200 y cabecera HX-Redirect en logout HTMX (RF-06).
+func TestAuthLogout_HTMX_Returns200WithHXRedirect(t *testing.T) {
+	handler, _ := setupTestAuthHandler(t, "go-htmx-crud")
+
+	for _, endpoint := range []string{"/logout", "/auth/logout"} {
+		req := httptest.NewRequest(http.MethodPost, endpoint, nil)
+		req.Header.Set("HX-Request", "true")
+		rec := httptest.NewRecorder()
+
+		handler.Logout(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("[%s] se esperaba codigo %d pero se obtuvo %d", endpoint, http.StatusOK, rec.Code)
+		}
+		if redirect := rec.Header().Get("HX-Redirect"); redirect != "/login" {
+			t.Fatalf("[%s] se esperaba cabecera HX-Redirect: /login pero se obtuvo %s", endpoint, redirect)
+		}
+	}
+}
+
+// TestAuthLogout_Standard_Returns303ToLogin verifica respuesta 303 hacia /login en logout ordinario (RF-07).
+func TestAuthLogout_Standard_Returns303ToLogin(t *testing.T) {
+	handler, _ := setupTestAuthHandler(t, "go-htmx-crud")
+
+	for _, endpoint := range []string{"/logout", "/auth/logout"} {
+		req := httptest.NewRequest(http.MethodPost, endpoint, nil)
+		rec := httptest.NewRecorder()
+
+		handler.Logout(rec, req)
+
+		if rec.Code != http.StatusSeeOther {
+			t.Fatalf("[%s] se esperaba codigo %d pero se obtuvo %d", endpoint, http.StatusSeeOther, rec.Code)
+		}
+		if location := rec.Header().Get("Location"); location != "/login" {
+			t.Fatalf("[%s] se esperaba Location /login pero se obtuvo %s", endpoint, location)
+		}
+	}
+}
+
+// TestAuthLogout_NonPostMethod_Returns405 verifica rechazo 405 en metodos no permitidos (RF-08).
+func TestAuthLogout_NonPostMethod_Returns405(t *testing.T) {
+	handler, _ := setupTestAuthHandler(t, "go-htmx-crud")
+
+	for _, method := range []string{http.MethodGet, http.MethodPut, http.MethodDelete} {
+		for _, endpoint := range []string{"/logout", "/auth/logout"} {
+			req := httptest.NewRequest(method, endpoint, nil)
+			rec := httptest.NewRecorder()
+
+			handler.Logout(rec, req)
+
+			if rec.Code != http.StatusMethodNotAllowed {
+				t.Fatalf("[%s %s] se esperaba codigo 405 pero se obtuvo %d", method, endpoint, rec.Code)
+			}
+		}
+	}
+}
+
+// TestAuthLogout_ClearsCookieProperly verifica que la cookie 'token' sea invalidada con atributos seguros (RNF-01, RNF-02).
+func TestAuthLogout_ClearsCookieProperly(t *testing.T) {
+	handler, _ := setupTestAuthHandler(t, "go-htmx-crud")
+
+	req := httptest.NewRequest(http.MethodPost, "/logout", nil)
+	req.AddCookie(&http.Cookie{Name: "token", Value: "active_token_to_clear", Path: "/"})
+	rec := httptest.NewRecorder()
+
+	handler.Logout(rec, req)
+
+	cookies := rec.Result().Cookies()
+	var tokenCookie *http.Cookie
+	for _, c := range cookies {
+		if c.Name == "token" {
+			tokenCookie = c
+			break
+		}
+	}
+
+	if tokenCookie == nil {
+		t.Fatal("la respuesta debe incluir la cookie 'token' para invalidarla")
+	}
+	if tokenCookie.MaxAge != -1 {
+		t.Fatalf("se esperaba MaxAge -1 pero se obtuvo %d", tokenCookie.MaxAge)
+	}
+	if !tokenCookie.HttpOnly {
+		t.Fatal("la cookie invalidada debe mantener la bandera HttpOnly")
+	}
+	if tokenCookie.SameSite != http.SameSiteLaxMode {
+		t.Fatalf("se esperaba SameSite Lax pero se obtuvo %v", tokenCookie.SameSite)
 	}
 }
 
@@ -374,5 +472,84 @@ func TestLogin_WrongPassword_Returns401NoToken(t *testing.T) {
 	http.Error(w, "Credenciales invalidas", http.StatusUnauthorized)
 	if w.Code != http.StatusUnauthorized {
 		t.Fatalf("se esperaba 401 pero se obtuvo %d", w.Code)
+	}
+}
+
+// TestAuthLanding_Unauthenticated_Renders200WithHodorButton verifica que un usuario no autenticado en /login vea la landing 200 OK con boton a /auth/login (RF-01, RF-02).
+func TestAuthLanding_Unauthenticated_Renders200WithHodorButton(t *testing.T) {
+	handler, _ := setupTestAuthHandler(t, "go-htmx-crud")
+
+	req := httptest.NewRequest(http.MethodGet, "/login", nil)
+	rec := httptest.NewRecorder()
+	handler.Landing(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("se esperaba codigo %d pero se obtuvo %d", http.StatusOK, rec.Code)
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "Iniciar sesión con Hodor") {
+		t.Fatalf("el cuerpo renderizado no contiene el texto del boton esperado: %s", body)
+	}
+	if !strings.Contains(body, "/auth/login") {
+		t.Fatalf("el boton debe apuntar a /auth/login: %s", body)
+	}
+}
+
+// TestAuthLanding_Authenticated_RedirectsToNotas verifica que un usuario autenticado sea redirigido con 303 a /notas desde /login y desde / (RF-03).
+func TestAuthLanding_Authenticated_RedirectsToNotas(t *testing.T) {
+	handler, idp := setupTestAuthHandler(t, "go-htmx-crud")
+
+	validToken := idp.generateToken(auth.HodorClaims{
+		Username:          "authenticated_user",
+		AuthorizedSystems: []string{"go-htmx-crud"},
+		Roles:             []string{"ROLE_USER"},
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    idp.issuer,
+			Subject:   "authenticated_user",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+		},
+	})
+
+	// 1. Acceso a /login con sesion activa
+	reqLogin := httptest.NewRequest(http.MethodGet, "/login", nil)
+	reqLogin.AddCookie(&http.Cookie{Name: "token", Value: validToken, Path: "/"})
+	recLogin := httptest.NewRecorder()
+	handler.Landing(recLogin, reqLogin)
+
+	if recLogin.Code != http.StatusSeeOther {
+		t.Fatalf("se esperaba codigo 303 en /login pero se obtuvo %d", recLogin.Code)
+	}
+	if location := recLogin.Header().Get("Location"); location != "/notas" {
+		t.Fatalf("se esperaba Location /notas pero se obtuvo %s", location)
+	}
+
+	// 2. Acceso a / con sesion activa
+	reqRoot := httptest.NewRequest(http.MethodGet, "/", nil)
+	reqRoot.AddCookie(&http.Cookie{Name: "token", Value: validToken, Path: "/"})
+	recRoot := httptest.NewRecorder()
+	handler.Root(recRoot, reqRoot)
+
+	if recRoot.Code != http.StatusSeeOther {
+		t.Fatalf("se esperaba codigo 303 en / pero se obtuvo %d", recRoot.Code)
+	}
+	if location := recRoot.Header().Get("Location"); location != "/notas" {
+		t.Fatalf("se esperaba Location /notas desde / pero se obtuvo %s", location)
+	}
+}
+
+// TestAuthRoot_Unauthenticated_RedirectsToLogin verifica que un visitante no autenticado en / sea redirigido con 303 a /login (RF-04).
+func TestAuthRoot_Unauthenticated_RedirectsToLogin(t *testing.T) {
+	handler, _ := setupTestAuthHandler(t, "go-htmx-crud")
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	handler.Root(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("se esperaba codigo %d pero se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+	if location := rec.Header().Get("Location"); location != "/login" {
+		t.Fatalf("se esperaba Location /login pero se obtuvo %s", location)
 	}
 }
