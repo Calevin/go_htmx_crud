@@ -15,7 +15,7 @@ Your mission is to audit a draft specification (`specs/<NNN>_<tarea>_spec.md`) a
 ## Least Privilege Constraints (Enforced by `.seb/bin/seb guard`)
 
 - **Active Role:** `seb-clarificador` (always export `SEB_SKILL="seb-clarificador"`).
-- **Allowed Reads:** `docs/constitution.md`, `MEMORY.md`, and all files in `specs/`.
+- **Allowed Reads:** `docs/constitution.md`, `MEMORY.md`, `docs/use-cases/README.md` (if it exists), and all files in `specs/`.
 - **Allowed Writes:** ONLY `specs/<NNN>_<tarea>_spec.md` and `MEMORY.md`.
 - **Allowed Shell Commands:** `.seb/bin/seb status` and `.seb/bin/seb memory-add`.
 - **Forbidden:** NEVER write or modify application source code, `plan.md`, or `verificador.md`.
@@ -32,10 +32,21 @@ Your mission is to audit a draft specification (`specs/<NNN>_<tarea>_spec.md`) a
    - **(3) Casos Límite No Cubiertos:** Missing `IF/THEN` statements for network timeouts, null inputs, concurrent access, or database locks.
    - **(4) Faltas en el "Definition of Done":** Check if the spec leaves critical domain logic undefined.
    - **(5) Brechas de Capacidad (Capability Gaps):** Check if requirements implicitly assume data models, services, entities or lifecycle management (e.g. CRUD, migrations) that do not yet exist in the codebase or prior specs.
+   - **(6) Gobernanza de `Afecta-UC:`:** Verify in new specifications that:
+     - The header contains `- **Afecta-UC:**` with its value wrapped in backticks (`UC-<dominio>_<accion>`, `nuevo`, or `ninguno`), rejecting empty values or unresolved template placeholders.
+     - When `Afecta-UC:` declares `` `UC-<dominio>_<accion>` ``, that identifier exists in `docs/use-cases/README.md` (if `docs/use-cases/README.md` does not exist, treat the reference as nonexistent).
+     - There is no contradiction between `Afecta-UC:` and the `RF-XX` requirements (e.g., declaring `` `ninguno` `` when `RF-XX` define observable external functional behavior, or declaring `` `nuevo` `` when `RF-XX` modify an already cataloged use case).
+     - When `Afecta-UC:` declares a list (comma-and-space separated elements, each wrapped in backticks):
+       - Validate that each element is a `` `UC-<dominio>_<accion>` `` identifier or `` `nuevo` ``, and that each `UC-<dominio>_<accion>` element exists in `docs/use-cases/README.md`.
+       - The order of the elements is irrelevant: do not raise observations about ordering.
+       - Verify that every declared element is backed by at least one `RF-XX`, and that no `RF-XX` modifies a cataloged use case absent from the list.
+       - Reject the list (as a direct question in Phase 2) if it contains `ninguno` combined with other elements, an element without backticks, a separator other than comma and space, duplicate elements (including repeated `nuevo`), or a `UC-*` not present in `docs/use-cases/README.md`.
+     - _(Backward compatibility: do not retroactively require `Afecta-UC:` on closed historical specs `001` through `010`; specs declaring a single value remain valid)._
+   - **(7) Identificadores Prefijados (`<NNN>-<TIPO>-<NN>`):** Verify that every declared `HU`, `RF`, `RNF` and `CL` identifier uses the `<NNN>-` prefix matching the spec `Tarea ID` (e.g. `013-RF-05` in spec `013`). Raise an observation for any identifier without the `<NNN>-` prefix, with a prefix different from its `Tarea ID`, or duplicated.
 
 ### Phase 2: The Interrogation (Human in the Loop)
 
-If you found any of the issues above, present a numbered list of direct questions to the human.
+If you found any of the issues above (including a missing, unbackticked, invalid, nonexistent `UC-*`, or contradictory `Afecta-UC:`), present a numbered list of direct questions to the human without editing the spec beforehand.
 
 - Format: Numbered list.
 - Tone: Direct, strict, professional.
@@ -91,6 +102,9 @@ Once normal answers are received or a previously blocked spec is resumed:
 - It contains any `[NECESITA ACLARACIÓN]` tag.
 - It is in state `BLOQUEADA_POR_DEPENDENCIA`.
 - It contains an unfulfilled `Contrato de Desbloqueo Requerido`.
+- It lacks a valid, backtick-wrapped `Afecta-UC:` header field (`UC-<dominio>_<accion>`, `nuevo`, or `ninguno`), references a `UC-*` not present in `docs/use-cases/README.md`, or contradicts its `RF-XX` requirements.
+- It declares an invalid `Afecta-UC:` list (`ninguno` combined, missing backticks, wrong separator, duplicate elements, nonexistent `UC-*`, or an element not backed by any `RF-XX`).
+- It declares an identifier without the `<NNN>-` prefix, with a prefix different from its `Tarea ID`, or duplicated.
 
 Once all conditions are fully met and strictly zero clarification tags remain:
 

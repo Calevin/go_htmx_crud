@@ -24,12 +24,12 @@ Para preservar la arquitectura del proyecto estipulada en `docs/constitution.md`
 
 | Archivo / Ruta | Acción (`CREAR` / `MODIFICAR`) | Responsabilidad Técnica | Requisitos Cubiertos (`RF-XX`) |
 | :------------- | :----------------------------- | :---------------------- | :----------------------------- |
-| `internal/middleware/auth.go` | `MODIFICAR` | Actualizar `handleUnauthorized` para redirigir hacia `/login` en lugar de `/auth/login`. | `RF-09`, `RF-10`, `RNF-03` |
-| `internal/middleware/auth_test.go` | `MODIFICAR` | Adaptar assertions de redirección no autenticada hacia `/login` y añadir casos deterministas. | `RF-09`, `RF-10`, `RNF-04` |
-| `internal/handlers/auth_handlers.go` | `MODIFICAR` | Incorporar métodos `Landing` y `Root` en `AuthHandler`, restringir `Logout` a `POST` con código `405` en métodos no permitidos. | `RF-01`, `RF-02`, `RF-03`, `RF-04`, `RF-06`, `RF-07`, `RF-08`, `RNF-01`, `RNF-02` |
-| `internal/handlers/auth_handlers_test.go` | `MODIFICAR` | Agregar tests unitarios para `Landing`, `Root`, rechazo 405 en `Logout` y validación de cookies. | `RF-01` a `RF-08`, `RNF-01` a `RNF-04` |
-| `templates/login.html` | `MODIFICAR` | Transformar el formulario de usuario/contraseña en pantalla de bienvenida con botón explícito a `/auth/login`. | `RF-01`, `RF-02` |
-| `main.go` | `MODIFICAR` | Conectar `r.Get("/login", authHandler.Landing)`, `r.Get("/auth/login", authHandler.Login)`, `r.Get("/", authHandler.Root)` y registrar métodos `POST` y `405` en `/logout`. | `RF-01`, `RF-03`, `RF-04`, `RF-05`, `RF-08` |
+| `internal/middleware/auth.go` | `MODIFICAR` | Actualizar `handleUnauthorized` para redirigir hacia `/login` en lugar de `/auth/login`. | `004-RF-09`, `004-RF-10`, `004-RNF-03` |
+| `internal/middleware/auth_test.go` | `MODIFICAR` | Adaptar assertions de redirección no autenticada hacia `/login` y añadir casos deterministas. | `004-RF-09`, `004-RF-10`, `004-RNF-04` |
+| `internal/handlers/auth_handlers.go` | `MODIFICAR` | Incorporar métodos `Landing` y `Root` en `AuthHandler`, restringir `Logout` a `POST` con código `405` en métodos no permitidos. | `004-RF-01`, `004-RF-02`, `004-RF-03`, `004-RF-04`, `004-RF-06`, `004-RF-07`, `004-RF-08`, `004-RNF-01`, `004-RNF-02` |
+| `internal/handlers/auth_handlers_test.go` | `MODIFICAR` | Agregar tests unitarios para `Landing`, `Root`, rechazo 405 en `Logout` y validación de cookies. | `004-RF-01` a `004-RF-08`, `004-RNF-01` a `004-RNF-04` |
+| `templates/login.html` | `MODIFICAR` | Transformar el formulario de usuario/contraseña en pantalla de bienvenida con botón explícito a `/auth/login`. | `004-RF-01`, `004-RF-02` |
+| `main.go` | `MODIFICAR` | Conectar `r.Get("/login", authHandler.Landing)`, `r.Get("/auth/login", authHandler.Login)`, `r.Get("/", authHandler.Root)` y registrar métodos `POST` y `405` en `/logout`. | `004-RF-01`, `004-RF-03`, `004-RF-04`, `004-RF-05`, `004-RF-08` |
 
 ## 3. Contratos, Firmas y Modelo de Datos
 
@@ -84,27 +84,27 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request)
 
 ## 5. Secuencia de Tareas Atómicas (TDD: Test en Rojo -> Código -> Test en Verde)
 
-- [ ] **T1. Actualizar el Middleware de Autenticación para Redirigir a `/login`** (`RF-09`, `RF-10`, `RNF-03`)
+- [ ] **T1. Actualizar el Middleware de Autenticación para Redirigir a `/login`** (`004-RF-09`, `004-RF-10`, `004-RNF-03`)
   - _Archivos:_ `internal/middleware/auth.go`, `internal/middleware/auth_test.go`
   - _Acción:_ Modificar `handleUnauthorized` para emitir `Location: /login` (`303 See Other`) en peticiones ordinarias y `HX-Redirect: /login` (`401 Unauthorized`) en HTMX. Adaptar los tests correspondientes.
-  - _Hecho cuando:_ Los comandos `CHK-08` y `CHK-09` de `specs/004_landing_login_logout_verificador.md` devuelven exit code `0`.
+  - _Hecho cuando:_ Los comandos `004-CHK-08` y `004-CHK-09` de `specs/004_landing_login_logout_verificador.md` devuelven exit code `0`.
 
-- [ ] **T2. Restricción del Cierre de Sesión a Método POST y Respuestas Seguras** (`RF-06`, `RF-07`, `RF-08`, `RNF-01`, `RNF-02`)
+- [ ] **T2. Restricción del Cierre de Sesión a Método POST y Respuestas Seguras** (`004-RF-06`, `004-RF-07`, `004-RF-08`, `004-RNF-01`, `004-RNF-02`)
   - _Archivos:_ `internal/handlers/auth_handlers.go`, `internal/handlers/auth_handlers_test.go`
   - _Acción:_ Implementar validación de método POST en `Logout`, emisión de cabecera `HX-Redirect: /login` con código `200 OK` para HTMX, `303 See Other` hacia `/login` para estándar, rechazo 405 ante GET y eliminación estricta de la cookie `token`.
-  - _Hecho cuando:_ Los comandos `CHK-05`, `CHK-06`, `CHK-07` y `CHK-10` devuelven exit code `0`.
+  - _Hecho cuando:_ Los comandos `004-CHK-05`, `004-CHK-06`, `004-CHK-07` y `004-CHK-10` devuelven exit code `0`.
 
-- [ ] **T3. Implementar Handlers de Landing Page (`/login`) y Raíz (`/`)** (`RF-01`, `RF-02`, `RF-03`, `RF-04`, `RF-05`)
+- [ ] **T3. Implementar Handlers de Landing Page (`/login`) y Raíz (`/`)** (`004-RF-01`, `004-RF-02`, `004-RF-03`, `004-RF-04`, `004-RF-05`)
   - _Archivos:_ `internal/handlers/auth_handlers.go`, `internal/handlers/auth_handlers_test.go`
   - _Acción:_ Inyectar `tpl *template.Template` en `AuthHandler`. Implementar `Landing` (con evaluación de token activo -> 303 a `/notas`, o render 200 de `login.html`) y `Root` (303 a `/notas` si está autenticado, 303 a `/login` si es anónimo).
-  - _Hecho cuando:_ Los comandos `CHK-01`, `CHK-02`, `CHK-03` y `CHK-04` devuelven exit code `0`.
+  - _Hecho cuando:_ Los comandos `004-CHK-01`, `004-CHK-02`, `004-CHK-03` y `004-CHK-04` devuelven exit code `0`.
 
-- [ ] **T4. Actualización de Vistas HTML y Composición en `main.go`** (`RF-01`, `RF-02`, `RF-08`)
+- [ ] **T4. Actualización de Vistas HTML y Composición en `main.go`** (`004-RF-01`, `004-RF-02`, `004-RF-08`)
   - _Archivos:_ `templates/login.html`, `main.go`
   - _Acción:_ Reemplazar formulario de credenciales locales en `templates/login.html` por pantalla de bienvenida con botón visible "Iniciar sesión con Hodor" que dirija a `/auth/login`. En `main.go`, pasar `tpl` a `NewAuthHandler`, registrar las nuevas rutas y configurar handlers 405 para GET en `/logout` y `/auth/logout`.
   - _Hecho cuando:_ `go build ./...` compila exitosamente y los controles de integración validan el flujo de rutas.
 
-- [ ] **T5. Verificación Determinista Integral y Limpieza de Linter** (`RNF-04`, `GLOBAL`)
+- [ ] **T5. Verificación Determinista Integral y Limpieza de Linter** (`004-RNF-04`, `GLOBAL`)
   - _Archivos:_ Repositorio completo
   - _Acción:_ Ejecutar la suite completa determinista y corregir cualquier observación de `golangci-lint`.
-  - _Hecho cuando:_ Los comandos `CHK-11` y `CHK-12` devuelven exit code `0`.
+  - _Hecho cuando:_ Los comandos `004-CHK-11` y `004-CHK-12` devuelven exit code `0`.

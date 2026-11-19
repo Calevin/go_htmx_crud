@@ -1,28 +1,28 @@
 {
   "tasks": {
     "001_tests_codigo_existente": {
-      "spec_hash": "ebdf859df4e58517257367cb40fbabd11068d529e764d97ca56862ab066a8f12",
-      "verifier_hash": "409794f7a38809a0ef6b811a7a7e0a60d495346247a4af8cda99c004fb3ce172",
+      "spec_hash": "599d4be86dbf5efa71489b04c031bb9cd81e90cde8052af903569101083ac9a7",
+      "verifier_hash": "c6c810e8b6704ad8ca2d7f59439fb19bb98b58de1adf2bfecd0ad1c36bfa9589",
       "verified": true,
-      "commit_hash": "711d44f"
+      "commit_hash": "a6bbd14"
     },
     "002_codigos_http_canonicos": {
-      "spec_hash": "0e7ac3c0c60463f5e7777736275a2eee192fb8ac86641c839a1d0d77dda325d6",
-      "verifier_hash": "2c7e8bc115b4772faf45c099de675159c7ec6daad135c6e367d4c8af3ddb6ccc",
+      "spec_hash": "a80cdf10f837650354e369189582246dbd74529cce5abdc5db805caedad9e46f",
+      "verifier_hash": "91bf22a374df5572ed8fa63da75fb8c9b33a24fbc0bf80d9034058a55d890f25",
       "verified": true,
-      "commit_hash": "b262575"
+      "commit_hash": "a6bbd14"
     },
     "003_autenticacion_hodor": {
-      "spec_hash": "76d71f3723ae28efefcf1f1856b81f9c84cfa03aed7e2d3a12f0ecbc07466a2f",
-      "verifier_hash": "6acd36ab0383cfa56f46f3f527d23aaef8510d6c3a46a3b123b08bd770ee1bc7",
+      "spec_hash": "5f2c61f81aa2388719f4178ab3fe41688fc441d033a1cf6986e0841623712cc4",
+      "verifier_hash": "eb35a2ce2bb69eaa8960a1d5af834e2ff9c908b5725b3d46b4cb04707c75c602",
       "verified": true,
-      "commit_hash": "b262575"
+      "commit_hash": "a6bbd14"
     },
     "004_landing_login_logout": {
-      "spec_hash": "e0e8662b13bb690518032a8a4d4ecdbf76e6944d6ddff783551741913fd66361",
-      "verifier_hash": "5538869d2c9324498f3f857ecc0881f5efc71b7200b80f883d2b9a0e33427960",
+      "spec_hash": "2b1644eb55d8eb0e88bc601668fdb07644bb137e2d7f21e7fcf4b277119189c8",
+      "verifier_hash": "68f1e2663051dbf251427b3fe5e3ff2e42fe64f4ab8dd0e46aa380096e1f2374",
       "verified": true,
-      "commit_hash": "d4cc739"
+      "commit_hash": "a6bbd14"
     }
   }
 }

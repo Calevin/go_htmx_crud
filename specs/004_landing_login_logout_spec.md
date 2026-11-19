@@ -20,10 +20,10 @@ Esta tarea introduce una pantalla de bienvenida y aterrizaje (Landing) desacopla
 
 ## 3. Historias de Usuario
 
-- **HU-01:** Como usuario que cierra sesión, quiero aterrizar en una pantalla de bienvenida local sin ser reenviado automáticamente al Proveedor de Identidad, para confirmar que mi sesión en esta aplicación fue terminada de forma segura.
-- **HU-02:** Como visitante no autenticado, quiero ver una página de bienvenida con información de la aplicación y un botón explícito para iniciar sesión con Hodor, para decidir conscientemente cuándo iniciar el flujo de autenticación.
-- **HU-03:** Como usuario ya autenticado, quiero que si navego manualmente a `/` o a `/login` se me redirija directamente al listado de notas, para no interactuar innecesariamente con una pantalla de bienvenida.
-- **HU-04:** Como usuario no autenticado que intenta acceder a una ruta protegida o a la raíz `/`, quiero ser redirigido a la pantalla de bienvenida (`/login`), para comprender que requiero autenticarme antes de ingresar al sistema.
+- **004-HU-01:** Como usuario que cierra sesión, quiero aterrizar en una pantalla de bienvenida local sin ser reenviado automáticamente al Proveedor de Identidad, para confirmar que mi sesión en esta aplicación fue terminada de forma segura.
+- **004-HU-02:** Como visitante no autenticado, quiero ver una página de bienvenida con información de la aplicación y un botón explícito para iniciar sesión con Hodor, para decidir conscientemente cuándo iniciar el flujo de autenticación.
+- **004-HU-03:** Como usuario ya autenticado, quiero que si navego manualmente a `/` o a `/login` se me redirija directamente al listado de notas, para no interactuar innecesariamente con una pantalla de bienvenida.
+- **004-HU-04:** Como usuario no autenticado que intenta acceder a una ruta protegida o a la raíz `/`, quiero ser redirigido a la pantalla de bienvenida (`/login`), para comprender que requiero autenticarme antes de ingresar al sistema.
 
 ## 4. Definiciones de Dominio (Opcional)
 
@@ -35,30 +35,30 @@ Esta tarea introduce una pantalla de bienvenida y aterrizaje (Landing) desacopla
 
 ## 5. Requisitos Funcionales (Criterios de Aceptación en EARS)
 
-- **RF-01 (Event-Driven):** CUANDO un usuario no autenticado solicita acceder mediante GET a `/login`, EL SISTEMA DEBE renderizar la pantalla de bienvenida con código de estado HTTP `200 OK`, sin iniciar ni redirigir al flujo de autorización del Proveedor de Identidad.
-- **RF-02 (Ubiquitous):** EL SISTEMA DEBE incluir en la pantalla de bienvenida un botón o enlace interactivo visible con el texto "Iniciar sesión con Hodor" cuyo destino apunte a `/auth/login`.
-- **RF-03 (State-Driven):** MIENTRAS un usuario posea una sesión local válida y activa, SI solicita acceder a `/login` o a `/`, ENTONCES EL SISTEMA DEBE responder con una redirección HTTP `303 See Other` hacia `/notas`.
-- **RF-04 (Event-Driven):** CUANDO un usuario no autenticado solicita acceder mediante GET a la raíz `/`, EL SISTEMA DEBE responder con una redirección HTTP `303 See Other` hacia `/login`.
-- **RF-05 (Event-Driven):** CUANDO un usuario solicita iniciar sesión accediendo a `/auth/login`, EL SISTEMA DEBE iniciar el flujo OAuth2 con PKCE generando el desafío criptográfico y redirigiendo al endpoint de autorización del Proveedor de Identidad.
-- **RF-06 (Event-Driven):** CUANDO un usuario solicita el cierre de sesión mediante una petición HTTP POST a `/logout` o `/auth/logout` con cabecera `HX-Request: true`, EL SISTEMA DEBE invalidar la cookie de sesión local (`token`) y responder con código de estado `200 OK` y la cabecera `HX-Redirect: /login`.
-- **RF-07 (Event-Driven):** CUANDO un usuario solicita el cierre de sesión mediante una petición HTTP POST ordinaria (sin cabecera HTMX) a `/logout` o `/auth/logout`, EL SISTEMA DEBE invalidar la cookie de sesión local (`token`) y responder con una redirección HTTP `303 See Other` hacia `/login`.
-- **RF-08 (Unwanted Behavior):** SI se recibe una petición con un método HTTP distinto de POST (como GET) en `/logout` o `/auth/logout`, ENTONCES EL SISTEMA DEBE rechazarla con código de estado `405 Method Not Allowed`.
-- **RF-09 (Unwanted Behavior):** SI una petición entrante ordinaria (sin cabecera HTMX) a una ruta protegida carece de sesión válida o contiene un token inválido, ENTONCES EL SISTEMA DEBE responder con una redirección HTTP `303 See Other` hacia `/login`.
-- **RF-10 (Event-Driven):** CUANDO una petición entrante desde un cliente HTMX (con cabecera `HX-Request: true`) a una ruta protegida carece de sesión válida o contiene un token inválido, EL SISTEMA DEBE responder con la cabecera `HX-Redirect: /login` y código de estado `401 Unauthorized`.
+- **004-RF-01 (Event-Driven):** CUANDO un usuario no autenticado solicita acceder mediante GET a `/login`, EL SISTEMA DEBE renderizar la pantalla de bienvenida con código de estado HTTP `200 OK`, sin iniciar ni redirigir al flujo de autorización del Proveedor de Identidad.
+- **004-RF-02 (Ubiquitous):** EL SISTEMA DEBE incluir en la pantalla de bienvenida un botón o enlace interactivo visible con el texto "Iniciar sesión con Hodor" cuyo destino apunte a `/auth/login`.
+- **004-RF-03 (State-Driven):** MIENTRAS un usuario posea una sesión local válida y activa, SI solicita acceder a `/login` o a `/`, ENTONCES EL SISTEMA DEBE responder con una redirección HTTP `303 See Other` hacia `/notas`.
+- **004-RF-04 (Event-Driven):** CUANDO un usuario no autenticado solicita acceder mediante GET a la raíz `/`, EL SISTEMA DEBE responder con una redirección HTTP `303 See Other` hacia `/login`.
+- **004-RF-05 (Event-Driven):** CUANDO un usuario solicita iniciar sesión accediendo a `/auth/login`, EL SISTEMA DEBE iniciar el flujo OAuth2 con PKCE generando el desafío criptográfico y redirigiendo al endpoint de autorización del Proveedor de Identidad.
+- **004-RF-06 (Event-Driven):** CUANDO un usuario solicita el cierre de sesión mediante una petición HTTP POST a `/logout` o `/auth/logout` con cabecera `HX-Request: true`, EL SISTEMA DEBE invalidar la cookie de sesión local (`token`) y responder con código de estado `200 OK` y la cabecera `HX-Redirect: /login`.
+- **004-RF-07 (Event-Driven):** CUANDO un usuario solicita el cierre de sesión mediante una petición HTTP POST ordinaria (sin cabecera HTMX) a `/logout` o `/auth/logout`, EL SISTEMA DEBE invalidar la cookie de sesión local (`token`) y responder con una redirección HTTP `303 See Other` hacia `/login`.
+- **004-RF-08 (Unwanted Behavior):** SI se recibe una petición con un método HTTP distinto de POST (como GET) en `/logout` o `/auth/logout`, ENTONCES EL SISTEMA DEBE rechazarla con código de estado `405 Method Not Allowed`.
+- **004-RF-09 (Unwanted Behavior):** SI una petición entrante ordinaria (sin cabecera HTMX) a una ruta protegida carece de sesión válida o contiene un token inválido, ENTONCES EL SISTEMA DEBE responder con una redirección HTTP `303 See Other` hacia `/login`.
+- **004-RF-10 (Event-Driven):** CUANDO una petición entrante desde un cliente HTMX (con cabecera `HX-Request: true`) a una ruta protegida carece de sesión válida o contiene un token inválido, EL SISTEMA DEBE responder con la cabecera `HX-Redirect: /login` y código de estado `401 Unauthorized`.
 
 ## 6. Requisitos No Funcionales (Verificables)
 
-- **RNF-01 (Aislamiento de Sesión Local):** El cierre de sesión debe restringirse estrictamente al ámbito de la aplicación local, sin emitir peticiones de red hacia el Proveedor de Identidad externo.
-- **RNF-02 (Higiene de Cookies):** La invalidación de la sesión debe garantizar la eliminación efectiva de la cookie de autenticación estableciendo una fecha de expiración en el pasado (`Max-Age: -1` o fecha pretérita) y conservando los atributos `HttpOnly`, `Path=/` y `SameSite=Lax`.
-- **RNF-03 (Determinismo en Respuestas HTMX):** Toda respuesta a solicitudes HTMX de cambio de sesión o expiración debe utilizar la cabecera canónica `HX-Redirect: /login` acompañada del código HTTP exacto estipulado (`200 OK` para logout exitoso y `401 Unauthorized` para peticiones no autorizadas).
-- **RNF-04 (Testabilidad Determinista y Aislamiento):** Toda la funcionalidad de la pantalla de bienvenida, despacho del flujo federado y cierre de sesión seguro debe validarse mediante pruebas unitarias e integración en memoria (`httptest.Server` y `net/http/httptest`) con cero llamadas a redes externas.
+- **004-RNF-01 (Aislamiento de Sesión Local):** El cierre de sesión debe restringirse estrictamente al ámbito de la aplicación local, sin emitir peticiones de red hacia el Proveedor de Identidad externo.
+- **004-RNF-02 (Higiene de Cookies):** La invalidación de la sesión debe garantizar la eliminación efectiva de la cookie de autenticación estableciendo una fecha de expiración en el pasado (`Max-Age: -1` o fecha pretérita) y conservando los atributos `HttpOnly`, `Path=/` y `SameSite=Lax`.
+- **004-RNF-03 (Determinismo en Respuestas HTMX):** Toda respuesta a solicitudes HTMX de cambio de sesión o expiración debe utilizar la cabecera canónica `HX-Redirect: /login` acompañada del código HTTP exacto estipulado (`200 OK` para logout exitoso y `401 Unauthorized` para peticiones no autorizadas).
+- **004-RNF-04 (Testabilidad Determinista y Aislamiento):** Toda la funcionalidad de la pantalla de bienvenida, despacho del flujo federado y cierre de sesión seguro debe validarse mediante pruebas unitarias e integración en memoria (`httptest.Server` y `net/http/httptest`) con cero llamadas a redes externas.
 
 ## 7. Casos Límite (Edge Cases)
 
-- **CL-01 (Cierre de sesión idempotente):** Si un cliente sin sesión activa (o cuya cookie ya fue borrada) envía una petición POST a `/logout`, el sistema debe procesar la solicitud exitosamente respondiendo con `200 OK` (`HX-Redirect: /login`) o `303 See Other`, sin registrar errores de servidor ni excepciones.
-- **CL-02 (Sesión expirada navegando a la landing):** Si un usuario presenta una cookie con un token expirado o firma corrupta e ingresa mediante GET a `/login`, el sistema debe tratar la sesión como inexistente, limpiar la cookie y renderizar la pantalla de bienvenida con código `200 OK`.
-- **CL-03 (Petición GET a `/logout`):** El sistema rechaza cualquier intento de logout por GET con `405 Method Not Allowed`, obligando a usar POST mediante el botón HTMX correspondiente.
-- **CL-04 (Interacción HTMX en cierre de sesión):** El botón de cierre de sesión en la barra de navegación debe emitir un `hx-post="/logout"`, desencadenando la redirección de página completa a `/login` al recibir `200 OK` con `HX-Redirect: /login`.
+- **004-CL-01 (Cierre de sesión idempotente):** Si un cliente sin sesión activa (o cuya cookie ya fue borrada) envía una petición POST a `/logout`, el sistema debe procesar la solicitud exitosamente respondiendo con `200 OK` (`HX-Redirect: /login`) o `303 See Other`, sin registrar errores de servidor ni excepciones.
+- **004-CL-02 (Sesión expirada navegando a la landing):** Si un usuario presenta una cookie con un token expirado o firma corrupta e ingresa mediante GET a `/login`, el sistema debe tratar la sesión como inexistente, limpiar la cookie y renderizar la pantalla de bienvenida con código `200 OK`.
+- **004-CL-03 (Petición GET a `/logout`):** El sistema rechaza cualquier intento de logout por GET con `405 Method Not Allowed`, obligando a usar POST mediante el botón HTMX correspondiente.
+- **004-CL-04 (Interacción HTMX en cierre de sesión):** El botón de cierre de sesión en la barra de navegación debe emitir un `hx-post="/logout"`, desencadenando la redirección de página completa a `/login` al recibir `200 OK` con `HX-Redirect: /login`.
 
 ## 8. Fuera de Alcance (Out of Scope)
 
@@ -68,7 +68,7 @@ Esta tarea introduce una pantalla de bienvenida y aterrizaje (Landing) desacopla
 
 ## 9. Criterios de Finalización (Definition of Done)
 
-- Todos los requisitos (`RF-01` a `RF-10`, `RNF-01` a `RNF-04`) cuentan con verificación programática en `[PASA]` ejecutada mediante `.seb/bin/seb verify landing_login_logout`.
+- Todos los requisitos (`004-RF-01` a `004-RF-10`, `004-RNF-01` a `004-RNF-04`) cuentan con verificación programática en `[PASA]` ejecutada mediante `.seb/bin/seb verify landing_login_logout`.
 - El flujo de logout aterriza inequívocamente en `/login` mostrando la pantalla de bienvenida y deteniendo cualquier bucle de redirección hacia Hodor.
 - Cero violaciones a `docs/constitution.md`.
 

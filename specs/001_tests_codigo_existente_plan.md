@@ -6,7 +6,7 @@
 
 ## 1. Resumen Arquitectónico y Aislamiento de Lógica
 
-La spec 001 establece la suite base de pruebas automatizadas para los cuatro paquetes lógicos del repositorio (`internal/auth`, `internal/middleware`, `internal/handlers`, `database`), garantizando una red de seguridad contra regresiones con una cobertura de líneas superior al 70% por paquete (`RNF-01`).
+La spec 001 establece la suite base de pruebas automatizadas para los cuatro paquetes lógicos del repositorio (`internal/auth`, `internal/middleware`, `internal/handlers`, `database`), garantizando una red de seguridad contra regresiones con una cobertura de líneas superior al 70% por paquete (`001-RNF-01`).
 
 La implementación previa y verificación formal de la spec base `002_codigos_http_canonicos` ya construyó la infraestructura base de pruebas HTTP en `internal/handlers/testhelpers_test.go`, cubriendo exhaustivamente los manejadores HTTP (`internal/handlers`, cobertura actual 73.2%) y el middleware de control de acceso (`internal/middleware`, cobertura actual 86.7%).
 
@@ -24,15 +24,15 @@ El diseño respeta estrictamente `docs/constitution.md` y `MEMORY.md`:
 
 | Archivo / Ruta | Acción | Responsabilidad Técnica | Requisitos Cubiertos |
 | :------------- | :----- | :---------------------- | :------------------- |
-| `internal/auth/jwt_test.go` | `CREAR` | Pruebas unitarias de generación y verificación de JWT, validación de claims (`Username`, `ExpiresAt`), firma con HMAC-SHA256, rechazo de firma ajena y tokens malformados | `RF-01`, `RF-04`, `RF-07`, `RF-10`, `RNF-01` |
-| `database/sqlite_test.go` | `CREAR` | Pruebas de inicialización de SQLite con `InitDB` sobre `t.TempDir()`, verificación de tablas creadas por `schema.sql` y validación de error en `executeSchema` | `RF-01`, `RF-02`, `RF-03`, `RF-10`, `RNF-01` |
+| `internal/auth/jwt_test.go` | `CREAR` | Pruebas unitarias de generación y verificación de JWT, validación de claims (`Username`, `ExpiresAt`), firma con HMAC-SHA256, rechazo de firma ajena y tokens malformados | `001-RF-01`, `001-RF-04`, `001-RF-07`, `001-RF-10`, `001-RNF-01` |
+| `database/sqlite_test.go` | `CREAR` | Pruebas de inicialización de SQLite con `InitDB` sobre `t.TempDir()`, verificación de tablas creadas por `schema.sql` y validación de error en `executeSchema` | `001-RF-01`, `001-RF-02`, `001-RF-03`, `001-RF-10`, `001-RNF-01` |
 | `specs/001_tests_codigo_existente_plan.md` | `CREAR` | Plan técnico y desglose TDD de la tarea | Gobernanza SDD |
 | `specs/001_tests_codigo_existente_verificador.md` | `CREAR` | Matriz de controles deterministas parseable por `.seb/bin/seb verify` | Gobernanza SDD |
 
 *Archivos ya existentes validados en Spec 002 (sin modificaciones de producción requeridas):*
-- `internal/middleware/auth_test.go` (cubre `RF-05`, `CL-03`, `RNF-01`).
-- `internal/handlers/view_handlers_test.go` (cubre `RF-01`, `RF-06`, `RF-08`, `CL-01`, `CL-02`, `RNF-01`).
-- `internal/handlers/auth_handlers_test.go` (cubre `RF-02`, `RF-07`, `CL-04`, `RNF-01`).
+- `internal/middleware/auth_test.go` (cubre `001-RF-05`, `001-CL-03`, `001-RNF-01`).
+- `internal/handlers/view_handlers_test.go` (cubre `001-RF-01`, `001-RF-06`, `001-RF-08`, `001-CL-01`, `001-CL-02`, `001-RNF-01`).
+- `internal/handlers/auth_handlers_test.go` (cubre `001-RF-02`, `001-RF-07`, `001-CL-04`, `001-RNF-01`).
 - `internal/handlers/testhelpers_test.go` (fixtures en memoria y SQLite temporal con `t.TempDir()`).
 
 ## 3. Contratos, Firmas y Diseño de Pruebas

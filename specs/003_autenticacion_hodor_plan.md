@@ -24,17 +24,17 @@ La aplicación `go_htmx_crud` opera exclusivamente como **Relying Party / Resour
 
 | Archivo / Ruta                                 | Acción      | Responsabilidad Técnica                                                                                                                                                                    | Requisitos Cubiertos                                            |
 | :--------------------------------------------- | :---------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
-| `go.mod` / `go.sum`                            | `MODIFICAR` | Agregar dependencias oficiales `golang.org/x/oauth2` y `github.com/MicahParks/keyfunc/v3`                                                                                                  | `RNF-05`                                                        |
-| `internal/auth/claims.go`                      | `CREAR`     | Definir struct `HodorClaims` con campos `sub`, `roles`, `authorized_systems` y `jwt.RegisteredClaims`                                                                                      | `RF-04`, `RF-06`, `RF-08`                                       |
-| `internal/auth/validator.go`                   | `CREAR`     | Validador de tokens RS256 con cliente JWKS en memoria (`keyfunc`), validación de emisor, caducidad y pertenencia al sistema autorizado                                                     | `RF-06`, `RF-07`, `RF-08`, `RF-11`, `RF-12`, `RNF-01`, `RNF-02` |
-| `internal/auth/testhelpers_test.go`            | `CREAR`     | Utilidades de pruebas para generar pares de claves RSA efímeras y servidor mock de JWKS en memoria                                                                                         | `RNF-04`                                                        |
-| `internal/auth/validator_test.go`              | `CREAR`     | Pruebas unitarias del validador de tokens (validación RS256, expiración, rechazo de HS256, rechazo sin sistema autorizado, caché y fail-fast)                                              | `RF-06`, `RF-07`, `RF-08`, `RF-11`, `RF-12`, `RNF-01`, `RNF-02` |
-| `internal/middleware/auth.go`                  | `MODIFICAR` | Adaptar middleware `Authenticator` para recibir `*auth.TokenValidator` y `clientID`: soporte de `HX-Redirect` (`401`), `303` para peticiones estándar y `403` para usuarios desautorizados | `RF-02`, `RF-03`, `RF-08`                                       |
-| `internal/middleware/auth_test.go`             | `MODIFICAR` | Pruebas de middleware cubriendo HTMX (`401`+`HX-Redirect`), estándar (`303`), `403 Forbidden` ante desautorización y paso autorizado                                                       | `RF-02`, `RF-03`, `RF-08`, `RNF-04`                             |
-| `internal/handlers/auth_handlers.go`           | `MODIFICAR` | Implementar `LoginHandler`, `CallbackHandler` y `LogoutHandler` OIDC/PKCE; retirar verificación de contraseñas locales y bcrypt                                                            | `RF-01`, `RF-04`, `RF-05`, `RF-09`, `RF-10`, `RF-13`            |
-| `internal/handlers/auth_handlers_test.go`      | `MODIFICAR` | Pruebas de los handlers OIDC contra servidor mock IdP (`Login`, `Callback` con estado válido e inválido, `Logout`)                                                                         | `RF-01`, `RF-04`, `RF-05`, `RF-09`, `RF-10`, `RF-13`            |
-| `internal/handlers/testhelpers_test.go`        | `MODIFICAR` | Adaptar router espejo de test y generadores de token para usar firmas RS256 del IdP mock                                                                                                   | `RNF-04`                                                        |
-| `main.go`                                      | `MODIFICAR` | Leer variables `IDP_HODOR_URL`, `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`; inicializar `TokenValidator` (fail-fast); montar rutas OIDC y retirar inicialización de usuario/contraseñas      | `RF-01`, `RF-12`, `RF-13`, `RNF-03`                             |
+| `go.mod` / `go.sum`                            | `MODIFICAR` | Agregar dependencias oficiales `golang.org/x/oauth2` y `github.com/MicahParks/keyfunc/v3`                                                                                                  | `003-RNF-05`                                                        |
+| `internal/auth/claims.go`                      | `CREAR`     | Definir struct `HodorClaims` con campos `sub`, `roles`, `authorized_systems` y `jwt.RegisteredClaims`                                                                                      | `003-RF-04`, `003-RF-06`, `003-RF-08`                                       |
+| `internal/auth/validator.go`                   | `CREAR`     | Validador de tokens RS256 con cliente JWKS en memoria (`keyfunc`), validación de emisor, caducidad y pertenencia al sistema autorizado                                                     | `003-RF-06`, `003-RF-07`, `003-RF-08`, `003-RF-11`, `003-RF-12`, `003-RNF-01`, `003-RNF-02` |
+| `internal/auth/testhelpers_test.go`            | `CREAR`     | Utilidades de pruebas para generar pares de claves RSA efímeras y servidor mock de JWKS en memoria                                                                                         | `003-RNF-04`                                                        |
+| `internal/auth/validator_test.go`              | `CREAR`     | Pruebas unitarias del validador de tokens (validación RS256, expiración, rechazo de HS256, rechazo sin sistema autorizado, caché y fail-fast)                                              | `003-RF-06`, `003-RF-07`, `003-RF-08`, `003-RF-11`, `003-RF-12`, `003-RNF-01`, `003-RNF-02` |
+| `internal/middleware/auth.go`                  | `MODIFICAR` | Adaptar middleware `Authenticator` para recibir `*auth.TokenValidator` y `clientID`: soporte de `HX-Redirect` (`401`), `303` para peticiones estándar y `403` para usuarios desautorizados | `003-RF-02`, `003-RF-03`, `003-RF-08`                                       |
+| `internal/middleware/auth_test.go`             | `MODIFICAR` | Pruebas de middleware cubriendo HTMX (`401`+`HX-Redirect`), estándar (`303`), `403 Forbidden` ante desautorización y paso autorizado                                                       | `003-RF-02`, `003-RF-03`, `003-RF-08`, `003-RNF-04`                             |
+| `internal/handlers/auth_handlers.go`           | `MODIFICAR` | Implementar `LoginHandler`, `CallbackHandler` y `LogoutHandler` OIDC/PKCE; retirar verificación de contraseñas locales y bcrypt                                                            | `003-RF-01`, `003-RF-04`, `003-RF-05`, `003-RF-09`, `003-RF-10`, `003-RF-13`            |
+| `internal/handlers/auth_handlers_test.go`      | `MODIFICAR` | Pruebas de los handlers OIDC contra servidor mock IdP (`Login`, `Callback` con estado válido e inválido, `Logout`)                                                                         | `003-RF-01`, `003-RF-04`, `003-RF-05`, `003-RF-09`, `003-RF-10`, `003-RF-13`            |
+| `internal/handlers/testhelpers_test.go`        | `MODIFICAR` | Adaptar router espejo de test y generadores de token para usar firmas RS256 del IdP mock                                                                                                   | `003-RNF-04`                                                        |
+| `main.go`                                      | `MODIFICAR` | Leer variables `IDP_HODOR_URL`, `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`; inicializar `TokenValidator` (fail-fast); montar rutas OIDC y retirar inicialización de usuario/contraseñas      | `003-RF-01`, `003-RF-12`, `003-RF-13`, `003-RNF-03`                             |
 | `specs/003_autenticacion_hodor_plan.md`        | `CREAR`     | Plan técnico y desglose TDD de la tarea                                                                                                                                                    | Gobernanza SDD                                                  |
 | `specs/003_autenticacion_hodor_verificador.md` | `CREAR`     | Matriz de controles deterministas parseable por `.seb/bin/seb verify`                                                                                                                      | Gobernanza SDD                                                  |
 
@@ -120,7 +120,7 @@ func Authenticator(validator *auth.TokenValidator) func(http.Handler) http.Handl
 ## 4. Decisiones Técnicas Justificadas
 
 - **Decisión 1: Incorporación justificada de `golang.org/x/oauth2` y `keyfunc/v3`.**
-  - _Motivo:_ La Constitución Sección B prohíbe dependencias sin aprobación en spec/plan. La spec 003 (RNF-05) autoriza formalmente las dependencias de OAuth2 y JWKS. `x/oauth2` es el paquete canónico y mantenido por el equipo oficial de Go para flujos Authorization Code con PKCE. `keyfunc/v3` es el estándar recomendado para `golang-jwt/jwt/v5` para manejo de JWKS con caché en memoria y soporte de rotación de claves (`kid`).
+  - _Motivo:_ La Constitución Sección B prohíbe dependencias sin aprobación en spec/plan. La spec 003 (003-RNF-05) autoriza formalmente las dependencias de OAuth2 y JWKS. `x/oauth2` es el paquete canónico y mantenido por el equipo oficial de Go para flujos Authorization Code con PKCE. `keyfunc/v3` es el estándar recomendado para `golang-jwt/jwt/v5` para manejo de JWKS con caché en memoria y soporte de rotación de claves (`kid`).
   - _Alternativa descartada:_ Implementar el cliente JWKS y el intercambio PKCE manualmente con `net/http` básico; incrementa innecesariamente el riesgo de errores criptográficos en el manejo de claves RSA y rotación.
 - **Decisión 2: Código HTTP `403 Forbidden` ante falta de asignación en `authorized_systems`.**
   - _Motivo:_ Confirmado por el usuario en la fase de clarificación. Un usuario autenticado en Hodor pero sin el cliente `go-htmx-crud` en sus claims está plenamente identificado pero desprovisto de permisos; responder `401` provocaría una redirección en bucle al login de Hodor donde el usuario volvería a presentarse válidamente.
@@ -135,30 +135,30 @@ func Authenticator(validator *auth.TokenValidator) func(http.Handler) http.Handl
 
 ## 5. Secuencia de Tareas Atómicas (TDD: Test en Rojo -> Código -> Test en Verde)
 
-- [ ] **T1. Incorporar dependencias externas y definir estructura de claims (`HodorClaims`)** (`RNF-05`, `RF-04`)
+- [ ] **T1. Incorporar dependencias externas y definir estructura de claims (`HodorClaims`)** (`003-RNF-05`, `003-RF-04`)
   - _Acción:_ Ejecutar `go get golang.org/x/oauth2 github.com/MicahParks/keyfunc/v3@v3.3.10` y crear `internal/auth/claims.go`.
   - _Hecho cuando:_ El proyecto compila con `go build ./...` y `go.mod` refleja las nuevas dependencias.
-- [ ] **T2. TDD Validador de Tokens RS256 con cliente JWKS (`internal/auth/validator.go`)** (`RF-06`, `RF-07`, `RF-08`, `RF-11`, `RF-12`, `RNF-01`, `RNF-02`)
+- [ ] **T2. TDD Validador de Tokens RS256 con cliente JWKS (`internal/auth/validator.go`)** (`003-RF-06`, `003-RF-07`, `003-RF-08`, `003-RF-11`, `003-RF-12`, `003-RNF-01`, `003-RNF-02`)
   - _Rojo:_ Escribir `internal/auth/validator_test.go` con utilidades de prueba en `internal/auth/testhelpers_test.go` (claves RSA y JWKS efímero).
   - _Verde:_ Implementar `TokenValidator` en `internal/auth/validator.go` resolviendo firmas RS256, expiración, emisor, validación de `authorized_systems`, caché en memoria y fail-fast.
-  - _Hecho cuando:_ `CHK-06`, `CHK-07`, `CHK-11`, `CHK-12` y `CHK-14` devuelven exit code `0`.
-- [ ] **T3. TDD Middleware de Autenticación con soporte HTMX y control de acceso (`internal/middleware/auth.go`)** (`RF-02`, `RF-03`, `RF-08`)
+  - _Hecho cuando:_ `003-CHK-06`, `003-CHK-07`, `003-CHK-11`, `003-CHK-12` y `003-CHK-14` devuelven exit code `0`.
+- [ ] **T3. TDD Middleware de Autenticación con soporte HTMX y control de acceso (`internal/middleware/auth.go`)** (`003-RF-02`, `003-RF-03`, `003-RF-08`)
   - _Rojo:_ Actualizar `internal/middleware/auth_test.go` para verificar `401`+`HX-Redirect` en peticiones HTMX, `303` en peticiones ordinarias y `403 Forbidden` ante usuario desautorizado.
   - _Verde:_ Adaptar `internal/middleware/auth.go` para usar `*auth.TokenValidator`.
-  - _Hecho cuando:_ `CHK-02`, `CHK-03` y `CHK-08` devuelven exit code `0`.
-- [ ] **T4. TDD Handlers de Autenticación OIDC con PKCE (`internal/handlers/auth_handlers.go`)** (`RF-01`, `RF-04`, `RF-05`, `RF-09`, `RF-10`)
+  - _Hecho cuando:_ `003-CHK-02`, `003-CHK-03` y `003-CHK-08` devuelven exit code `0`.
+- [ ] **T4. TDD Handlers de Autenticación OIDC con PKCE (`internal/handlers/auth_handlers.go`)** (`003-RF-01`, `003-RF-04`, `003-RF-05`, `003-RF-09`, `003-RF-10`)
   - _Rojo:_ Actualizar `internal/handlers/auth_handlers_test.go` con casos de prueba para `Login` (generación de PKCE y cookies `oauth_*`), `Callback` (éxito, estado inválido `400`, intercambio de token) y `Logout` (invalidación de cookie `token`).
   - _Verde:_ Reescribir `internal/handlers/auth_handlers.go` implementando los nuevos handlers OIDC.
-  - _Hecho cuando:_ `CHK-01`, `CHK-04`, `CHK-05`, `CHK-09` y `CHK-10` devuelven exit code `0`.
-- [ ] **T5. Retiro de verificación de contraseñas locales y bcrypt en handlers (`RF-13`)**
+  - _Hecho cuando:_ `003-CHK-01`, `003-CHK-04`, `003-CHK-05`, `003-CHK-09` y `003-CHK-10` devuelven exit code `0`.
+- [ ] **T5. Retiro de verificación de contraseñas locales y bcrypt en handlers (`003-RF-13`)**
   - _Acción:_ Asegurar que `internal/handlers/auth_handlers.go` no invoque `bcrypt` ni consulte contraseñas de la base de datos local.
-  - _Hecho cuando:_ `CHK-13` devuelve exit code `0`.
-- [ ] **T6. Adaptación de `main.go` para cableado de OIDC y variables de entorno (`RNF-03`, `RF-12`, `RF-13`)**
+  - _Hecho cuando:_ `003-CHK-13` devuelve exit code `0`.
+- [ ] **T6. Adaptación de `main.go` para cableado de OIDC y variables de entorno (`003-RNF-03`, `003-RF-12`, `003-RF-13`)**
   - _Acción:_ Cargar `IDP_HODOR_URL`, `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`; inicializar `TokenValidator` con verificación fail-fast; configurar rutas Chi públicas (`/login`, `/auth/login`, `/auth/callback`, `/logout`, `/auth/logout`) y grupo protegido. Retirar la función `createTestUser` y la obligatoriedad de `JWT_SECRET`.
   - _Hecho cuando:_ `go build ./...` compila limpiamente sin errores de cableado.
-- [ ] **T7. Actualización de helpers de pruebas existentes y validación de rutas de notas (`RNF-04`)**
+- [ ] **T7. Actualización de helpers de pruebas existentes y validación de rutas de notas (`003-RNF-04`)**
   - _Acción:_ Adaptar `internal/handlers/testhelpers_test.go` para firmar tokens con la clave RSA efímera y validar que los tests de CRUD en `internal/handlers/view_handlers_test.go` sigan pasando sin regresiones.
-  - _Hecho cuando:_ `CHK-15` (`go test -count=1 ./internal/auth ./internal/middleware ./internal/handlers ./database`) devuelve exit code `0`.
-- [ ] **T8. Puerta determinista final: compilación limpia, suite verde y linter con cero hallazgos (`RNF-05`)**
+  - _Hecho cuando:_ `003-CHK-15` (`go test -count=1 ./internal/auth ./internal/middleware ./internal/handlers ./database`) devuelve exit code `0`.
+- [ ] **T8. Puerta determinista final: compilación limpia, suite verde y linter con cero hallazgos (`003-RNF-05`)**
   - _Acción:_ Ejecutar la verificación global determinista del repositorio.
-  - _Hecho cuando:_ `CHK-16` devuelve exit code `0`.
+  - _Hecho cuando:_ `003-CHK-16` devuelve exit code `0`.

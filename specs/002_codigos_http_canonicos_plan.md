@@ -12,11 +12,11 @@ La spec 002 solo exige **un cambio de comportamiento real**: responder `404` cua
 
 | Archivo / Ruta | Acción | Responsabilidad Técnica | Requisitos Cubiertos |
 | :------------- | :----- | :---------------------- | :------------------- |
-| `internal/handlers/view_handlers.go` | `MODIFICAR` | Distinguir `sql.ErrNoRows` → `404` en edición, actualización y borrado (resto de errores → `500` sigue igual) | `RF-05`, `CL-01` |
-| `internal/handlers/testhelpers_test.go` | `CREAR` | BD temporal con esquema, fixtures (usuarios bcrypt, tags, notas), router Chi espejo de `main.go` con middleware, `tpl` desde disco con `funcMap include`, utilidades de cookie/token | `RF-01` a `RF-08` (infra) |
-| `internal/handlers/view_handlers_test.go` | `CREAR` | Pruebas de lectura, CRUD exitoso, `404`, `400`, doble borrado | `RF-01`, `RF-03`, `RF-04`, `RF-05`, `RF-08`, `CL-01`, `CL-02` |
-| `internal/handlers/auth_handlers_test.go` | `CREAR` | Pruebas de login/logout (`200`+`HX-Redirect`) y credenciales inválidas/vacías (`401` sin token) | `RF-02`, `RF-07`, `CL-04` |
-| `internal/middleware/auth_test.go` | `CREAR` | Pruebas de los 4 escenarios de token → `303` a `/login` sin contenido protegido | `RF-06`, `CL-03` |
+| `internal/handlers/view_handlers.go` | `MODIFICAR` | Distinguir `sql.ErrNoRows` → `404` en edición, actualización y borrado (resto de errores → `500` sigue igual) | `002-RF-05`, `002-CL-01` |
+| `internal/handlers/testhelpers_test.go` | `CREAR` | BD temporal con esquema, fixtures (usuarios bcrypt, tags, notas), router Chi espejo de `main.go` con middleware, `tpl` desde disco con `funcMap include`, utilidades de cookie/token | `002-RF-01` a `002-RF-08` (infra) |
+| `internal/handlers/view_handlers_test.go` | `CREAR` | Pruebas de lectura, CRUD exitoso, `404`, `400`, doble borrado | `002-RF-01`, `002-RF-03`, `002-RF-04`, `002-RF-05`, `002-RF-08`, `002-CL-01`, `002-CL-02` |
+| `internal/handlers/auth_handlers_test.go` | `CREAR` | Pruebas de login/logout (`200`+`HX-Redirect`) y credenciales inválidas/vacías (`401` sin token) | `002-RF-02`, `002-RF-07`, `002-CL-04` |
+| `internal/middleware/auth_test.go` | `CREAR` | Pruebas de los 4 escenarios de token → `303` a `/login` sin contenido protegido | `002-RF-06`, `002-CL-03` |
 
 No se modifica: `main.go`, `internal/db/**` (generado), `sql/**`, `templates/**`, `database/sqlite.go`, `internal/auth/**`.
 
@@ -78,27 +78,27 @@ newExpiredToken(t, secret): jwt.NewWithClaims HS256 con ExpiresAt en el pasado, 
 
 _Regla para el Agente Implementador: ejecutá UNA tarea a la vez en orden. Primero el test (Rojo), luego el código mínimo (Verde). Si el comportamiento actual ya cumple el requisito, el test nace en Verde: la tarea se valida igual con su CHK._
 
-- [ ] **T1. Crear infraestructura de pruebas (BD temporal, fixtures, router espejo, tpl) y test de lectura GET → 200** (`RF-01`)
+- [ ] **T1. Crear infraestructura de pruebas (BD temporal, fixtures, router espejo, tpl) y test de lectura GET → 200** (`002-RF-01`)
   - _Archivos:_ `internal/handlers/testhelpers_test.go`, `internal/handlers/view_handlers_test.go`
-  - _Hecho cuando:_ `CHK-01` de `specs/002_codigos_http_canonicos_verificador.md` devuelve exit code `0`.
-- [ ] **T2. Pruebas de middleware: sin token, inválido, secreto ajeno y expirado → `303` a `/login` sin contenido protegido** (`RF-06`, `CL-03`)
+  - _Hecho cuando:_ `002-CHK-01` de `specs/002_codigos_http_canonicos_verificador.md` devuelve exit code `0`.
+- [ ] **T2. Pruebas de middleware: sin token, inválido, secreto ajeno y expirado → `303` a `/login` sin contenido protegido** (`002-RF-06`, `002-CL-03`)
   - _Archivos:_ `internal/middleware/auth_test.go`
-  - _Hecho cuando:_ `CHK-06` devuelve exit code `0`.
-- [ ] **T3. Pruebas de auth: login/logout exitoso → `200` + `HX-Redirect`; credenciales vacías/incorrectas → `401` sin cookie de token** (`RF-02`, `RF-07`, `CL-04`)
+  - _Hecho cuando:_ `002-CHK-06` devuelve exit code `0`.
+- [ ] **T3. Pruebas de auth: login/logout exitoso → `200` + `HX-Redirect`; credenciales vacías/incorrectas → `401` sin cookie de token** (`002-RF-02`, `002-RF-07`, `002-CL-04`)
   - _Archivos:_ `internal/handlers/auth_handlers_test.go`
-  - _Hecho cuando:_ `CHK-02` y `CHK-07` devuelven exit code `0`.
-- [ ] **T4. Pruebas de éxito de notas: crear/editar → `302` con efecto en persistencia; borrar existente → `200` con retirada verificada** (`RF-03`, `RF-04`)
+  - _Hecho cuando:_ `002-CHK-02` y `002-CHK-07` devuelven exit code `0`.
+- [ ] **T4. Pruebas de éxito de notas: crear/editar → `302` con efecto en persistencia; borrar existente → `200` con retirada verificada** (`002-RF-03`, `002-RF-04`)
   - _Archivos:_ `internal/handlers/view_handlers_test.go`
-  - _Hecho cuando:_ `CHK-03` y `CHK-04` devuelven exit code `0`.
-- [ ] **T5. ROJO: tests de `404` para nota inexistente (editar, actualizar, borrar) + doble borrado → VERDE: implementar `ErrNoRows`/`GetNote` previo en `view_handlers.go`** (`RF-05`, `CL-01`)
+  - _Hecho cuando:_ `002-CHK-03` y `002-CHK-04` devuelven exit code `0`.
+- [ ] **T5. ROJO: tests de `404` para nota inexistente (editar, actualizar, borrar) + doble borrado → VERDE: implementar `ErrNoRows`/`GetNote` previo en `view_handlers.go`** (`002-RF-05`, `002-CL-01`)
   - _Archivos:_ `internal/handlers/view_handlers_test.go` (rojo), `internal/handlers/view_handlers.go` (verde)
-  - _Hecho cuando:_ `CHK-05` y `CHK-09` devuelven exit code `0`.
-- [ ] **T6. Pruebas de `400` sin escritura: identificador no numérico y cuerpo ilegible** (`RF-08`, `CL-02`)
+  - _Hecho cuando:_ `002-CHK-05` y `002-CHK-09` devuelven exit code `0`.
+- [ ] **T6. Pruebas de `400` sin escritura: identificador no numérico y cuerpo ilegible** (`002-RF-08`, `002-CL-02`)
   - _Archivos:_ `internal/handlers/view_handlers_test.go`
-  - _Hecho cuando:_ `CHK-08` devuelve exit code `0`.
-- [ ] **T7. Suite completa sin regresiones en todos los paquetes** (`RNF-01`)
+  - _Hecho cuando:_ `002-CHK-08` devuelve exit code `0`.
+- [ ] **T7. Suite completa sin regresiones en todos los paquetes** (`002-RNF-01`)
   - _Archivos:_ (correcciones mínimas de test si algo regresa)
-  - _Hecho cuando:_ `CHK-10` devuelve exit code `0`.
-- [ ] **T8. Compilación, suite y linter en cero hallazgos (`govet`, `errcheck`, `staticcheck`)** (`RNF-02`)
+  - _Hecho cuando:_ `002-CHK-10` devuelve exit code `0`.
+- [ ] **T8. Compilación, suite y linter en cero hallazgos (`govet`, `errcheck`, `staticcheck`)** (`002-RNF-02`)
   - _Archivos:_ (correcciones mínimas de estilo/errores no manejados)
-  - _Hecho cuando:_ `CHK-11` devuelve exit code `0`.
+  - _Hecho cuando:_ `002-CHK-11` devuelve exit code `0`.
