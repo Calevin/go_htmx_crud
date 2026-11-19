@@ -1,6 +1,6 @@
 # UC-auth_session: Autenticacion Canonica y Control de Sesion
 
-> **Trazabilidad SDD:** Derivado de la spec `specs/002_codigos_http_canonicos_spec.md` (Requisitos: `RF-01`, `RF-02`, `RF-06`, `RF-07`, `CL-03`, `CL-04`).
+> **Trazabilidad SDD:** Derivado de la spec `specs/002_codigos_http_canonicos_spec.md` (Requisitos: `002-RF-01`, `002-RF-02`, `002-RF-06`, `002-RF-07`, `002-CL-03`, `002-CL-04`).
 
 ## 1. Ficha de Intencion
 
@@ -38,8 +38,8 @@ sequenceDiagram
 
 | Error Code                  | Causa Raiz                                                                            | Respuesta / Efecto                                                  |
 | :-------------------------- | :------------------------------------------------------------------------------------ | :------------------------------------------------------------------ |
-| `303 See Other`             | Acceso a recurso protegido sin cookie `token`, o token con firma no valida o expirado | Redireccion con cabecera `Location: /login` (`RF-06`, `CL-03`)      |
-| `401 Unauthorized`          | Credenciales de acceso vacias o usuario/contrasena incorrectos                        | Rechazo de login sin establecer cookie de sesion (`RF-07`, `CL-04`) |
+| `303 See Other`             | Acceso a recurso protegido sin cookie `token`, o token con firma no valida o expirado | Redireccion con cabecera `Location: /login` (`002-RF-06`, `002-CL-03`)      |
+| `401 Unauthorized`          | Credenciales de acceso vacias o usuario/contrasena incorrectos                        | Rechazo de login sin establecer cookie de sesion (`002-RF-07`, `002-CL-04`) |
 | `500 Internal Server Error` | Error no esperado al verificar credenciales o procesar firma                          | Respuesta de error interno del servidor                             |
 
 ## 4. Postcondiciones y Efectos Secundarios

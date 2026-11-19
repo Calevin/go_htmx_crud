@@ -1,6 +1,6 @@
 # UC-notes_create: Creacion de Nota y Renderizado de Formulario
 
-> **Trazabilidad SDD:** Derivado de la spec `specs/002_codigos_http_canonicos_spec.md` (Requisitos: `RF-01`, `RF-03`, `RF-06`, `RF-08`).
+> **Trazabilidad SDD:** Derivado de la spec `specs/002_codigos_http_canonicos_spec.md` (Requisitos: `002-RF-01`, `002-RF-03`, `002-RF-06`, `002-RF-08`).
 
 ## 1. Ficha de Intencion
 
@@ -35,8 +35,8 @@ sequenceDiagram
 
 | Error Code                  | Causa Raiz                                                        | Respuesta / Efecto                                                         |
 | :-------------------------- | :---------------------------------------------------------------- | :------------------------------------------------------------------------- |
-| `303 See Other`             | Peticion sin token de sesion, con token caducado o firma invalida | Redireccion a `/login` sin autorizar el acceso (`RF-06`)                   |
-| `400 Bad Request`           | Fallo al parsear formulario o parametro `tag_id` no numerico      | Rechazo inmediato de la solicitud sin insercion en base de datos (`RF-08`) |
+| `303 See Other`             | Peticion sin token de sesion, con token caducado o firma invalida | Redireccion a `/login` sin autorizar el acceso (`002-RF-06`)                   |
+| `400 Bad Request`           | Fallo al parsear formulario o parametro `tag_id` no numerico      | Rechazo inmediato de la solicitud sin insercion en base de datos (`002-RF-08`) |
 | `500 Internal Server Error` | Fallo de insercion o vinculacion en la persistencia SQLite        | Error interno del servidor                                                 |
 
 ## 4. Postcondiciones y Efectos Secundarios

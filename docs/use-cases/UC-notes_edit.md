@@ -1,6 +1,6 @@
 # UC-notes_edit: Modificacion y Formulario de Edicion de Nota
 
-> **Trazabilidad SDD:** Derivado de la spec `specs/002_codigos_http_canonicos_spec.md` (Requisitos: `RF-01`, `RF-03`, `RF-05`, `RF-06`, `RF-08`, `CL-02`).
+> **Trazabilidad SDD:** Derivado de la spec `specs/002_codigos_http_canonicos_spec.md` (Requisitos: `002-RF-01`, `002-RF-03`, `002-RF-05`, `002-RF-06`, `002-RF-08`, `002-CL-02`).
 
 ## 1. Ficha de Intencion
 
@@ -52,9 +52,9 @@ flowchart TD
 
 | Error Code                  | Causa Raiz                                                                       | Respuesta / Efecto                                               |
 | :-------------------------- | :------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
-| `303 See Other`             | Falta de token, firma invalida o token caducado                                  | Redireccion hacia `/login` (`RF-06`)                             |
-| `400 Bad Request`           | Parametro `{id}` en URL no numerico, `tag_id` invalido o cuerpo malformado       | Respuesta 400 sin alterar datos (`RF-08`, `CL-02`)               |
-| `404 Not Found`             | El identificador numerico no corresponde a una nota existente en la persistencia | Respuesta 404 informando ausencia del recurso (`RF-05`, `CL-02`) |
+| `303 See Other`             | Falta de token, firma invalida o token caducado                                  | Redireccion hacia `/login` (`002-RF-06`)                             |
+| `400 Bad Request`           | Parametro `{id}` en URL no numerico, `tag_id` invalido o cuerpo malformado       | Respuesta 400 sin alterar datos (`002-RF-08`, `002-CL-02`)               |
+| `404 Not Found`             | El identificador numerico no corresponde a una nota existente en la persistencia | Respuesta 404 informando ausencia del recurso (`002-RF-05`, `002-CL-02`) |
 | `500 Internal Server Error` | Fallo de comunicacion o error no recuperable de SQLite                           | Respuesta 500 informando error del servidor                      |
 
 ## 5. Postcondiciones y Efectos Secundarios

@@ -1,6 +1,6 @@
 # UC-notes_delete: Eliminacion de Nota
 
-> **Trazabilidad SDD:** Derivado de la spec `specs/002_codigos_http_canonicos_spec.md` (Requisitos: `RF-04`, `RF-05`, `RF-06`, `RF-08`, `CL-01`, `CL-02`).
+> **Trazabilidad SDD:** Derivado de la spec `specs/002_codigos_http_canonicos_spec.md` (Requisitos: `002-RF-04`, `002-RF-05`, `002-RF-06`, `002-RF-08`, `002-CL-01`, `002-CL-02`).
 
 ## 1. Ficha de Intencion
 
@@ -45,9 +45,9 @@ flowchart TD
 
 | Error Code                  | Causa Raiz                                                                  | Respuesta / Efecto                                                       |
 | :-------------------------- | :-------------------------------------------------------------------------- | :----------------------------------------------------------------------- |
-| `303 See Other`             | Peticion no autenticada, token invalido o expirado                          | Redireccion a `/login` sin autorizar la eliminacion (`RF-06`)            |
-| `400 Bad Request`           | Parametro `{id}` en la URL no numerico                                      | Respuesta 400 sin ejecutar queries en DB (`RF-08`, `CL-02`)              |
-| `404 Not Found`             | La nota indicada por `{id}` no existe en la persistencia o ya fue eliminada | Respuesta 404 informando recurso inexistente (`RF-05`, `CL-01`, `CL-02`) |
+| `303 See Other`             | Peticion no autenticada, token invalido o expirado                          | Redireccion a `/login` sin autorizar la eliminacion (`002-RF-06`)            |
+| `400 Bad Request`           | Parametro `{id}` en la URL no numerico                                      | Respuesta 400 sin ejecutar queries en DB (`002-RF-08`, `002-CL-02`)              |
+| `404 Not Found`             | La nota indicada por `{id}` no existe en la persistencia o ya fue eliminada | Respuesta 404 informando recurso inexistente (`002-RF-05`, `002-CL-01`, `002-CL-02`) |
 | `500 Internal Server Error` | Fallo de base de datos durante la consulta o la eliminacion                 | Respuesta 500 por error interno                                          |
 
 ## 5. Postcondiciones y Efectos Secundarios

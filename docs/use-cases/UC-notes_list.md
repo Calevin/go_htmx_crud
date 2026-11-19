@@ -1,6 +1,6 @@
 # UC-notes_list: Consulta y Visualizacion de Notas
 
-> **Trazabilidad SDD:** Derivado de la spec `specs/002_codigos_http_canonicos_spec.md` (Requisitos: `RF-01`, `RF-06`).
+> **Trazabilidad SDD:** Derivado de la spec `specs/002_codigos_http_canonicos_spec.md` (Requisitos: `002-RF-01`, `002-RF-06`).
 
 ## 1. Ficha de Intencion
 
@@ -30,7 +30,7 @@ sequenceDiagram
 
 | Error Code                  | Causa Raiz                                                                      | Respuesta / Efecto                                                                   |
 | :-------------------------- | :------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------- |
-| `303 See Other`             | Ausencia de cookie `token`, token malformado, secreto invalido o token expirado | Redireccion inmediata a `/login` sin entregar contenido protegido (`RF-06`, `CL-03`) |
+| `303 See Other`             | Ausencia de cookie `token`, token malformado, secreto invalido o token expirado | Redireccion inmediata a `/login` sin entregar contenido protegido (`002-RF-06`, `002-CL-03`) |
 | `500 Internal Server Error` | Fallo de lectura o conexion en la persistencia SQLite                           | Mensaje de error interno del servidor                                                |
 
 ## 4. Postcondiciones y Efectos Secundarios
